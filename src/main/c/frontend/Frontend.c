@@ -75,6 +75,19 @@ Token * createToken(LexicalAnalyzer * lexicalAnalyzer, TokenLabel label) {
 	token->line = yyget_lineno(lexicalAnalyzer->scanner);
 	token->semanticValue = (SemanticValue *) calloc(1, sizeof(SemanticValue));
 	strncpy(token->lexeme, yyget_text(lexicalAnalyzer->scanner), token->length);
+	/**
+	 * Line tracking piggybacks on "--yylineno" (already enabled for
+	 * "token->line" above), which flex keeps correct even across a single
+	 * multi-line match (e.g. one "<MULTILINE_COMMENT>[^*]+" chunk spanning
+	 * several lines). Column tracking is a separate piece of infrastructure
+	 * (a running column counter over every lexeme, including the ignored
+	 * ones, reset on embedded newlines) that this project doesn't have yet,
+	 * so "first_column"/"last_column" are left at their zero-initialized
+	 * default rather than reporting a misleading value.
+	 */
+	YYLTYPE * location = (YYLTYPE *) lexicalAnalyzer->location;
+	location->first_line = token->line;
+	location->last_line = token->line;
 	return token;
 }
 

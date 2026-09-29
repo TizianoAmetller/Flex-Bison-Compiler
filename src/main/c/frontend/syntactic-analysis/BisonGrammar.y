@@ -7,12 +7,12 @@
 /**
  * The error reporting function for Bison parser.
  *
- * @todo Add location to the grammar and "pushToken" API function.
- *
  * @see https://www.gnu.org/software/bison/manual/html_node/Error-Reporting-Function.html
  * @see https://www.gnu.org/software/bison/manual/html_node/Tracking-Locations.html
  */
-void yyerror(const YYLTYPE * location, const char * message) {}
+void yyerror(const YYLTYPE * location, const char * message) {
+	SyntacticErrorSemanticAction(location, message);
+}
 
 %}
 
@@ -76,6 +76,15 @@ void yyerror(const YYLTYPE * location, const char * message) {}
 %destructor { destroyTeamDeclaration($$); } <teamDeclaration>
 %destructor { destroyTurnDeclaration($$); } <turnDeclaration>
 %destructor { destroyUnitDeclaration($$); } <unitDeclaration>
+
+/**
+ * "ID" and "STRING" terminals carry a heap-allocated string (see
+ * FlexActions.c). A successful reduction always either stores that pointer
+ * into an AST node or frees it, so this destructor only ever runs on the
+ * ID/STRING symbols left on the stack (or as lookahead) when a syntax error
+ * aborts the parse before that happens.
+ */
+%destructor { free($$); } <string>
 
 /** Terminals: literals. */
 %token <integer> INTEGER

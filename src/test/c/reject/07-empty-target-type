@@ -1,0 +1,7 @@
+unit Hero {
+	health: 100
+}
+
+ability Slash on target: {
+	deal 1 to target
+}

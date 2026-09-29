@@ -150,6 +150,17 @@ CompilationStatus StringLexemeAction() {
 CompilationStatus UnknownLexemeAction() {
 	Token * token = createToken(_lexicalAnalyzer, UNKNOWN);
 	_logTokenAction(__FUNCTION__, token);
+	/**
+	 * UNKNOWN is not a valid symbol anywhere in the grammar, so pushing it
+	 * (instead of returning FAILED directly, as this used to do) makes
+	 * Bison itself detect the syntax error. That is what makes it run its
+	 * own stack-unwinding cleanup (see BisonParser.c's "yyreturnlab"),
+	 * which invokes every "%destructor" on whatever AST fragments were
+	 * already built and sitting on the parser's stack. Returning FAILED
+	 * directly here, without ever calling "pushToken", left that cleanup
+	 * unreached and leaked them.
+	 */
+	CompilationStatus status = pushToken(_lexicalAnalyzer, token);
 	destroyToken(token);
-	return FAILED;
+	return status;
 }

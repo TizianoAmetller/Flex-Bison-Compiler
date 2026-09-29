@@ -1,0 +1,5 @@
+unit Hero {
+	health: 100
+}
+
+party Heroes = []

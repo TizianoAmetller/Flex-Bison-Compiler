@@ -13,6 +13,9 @@
 /** Initialize module's internal state. */
 ModuleDestructor initializeBisonActionsModule(CompilerState * compilerState);
 
+/** Reports a syntax error, with its source location, through this module's logger. */
+void SyntacticErrorSemanticAction(const YYLTYPE * location, const char * message);
+
 /**
  * Bison semantic actions.
  */

@@ -1,0 +1,9 @@
+unit Hero {
+	health: 100
+}
+
+unit Goblin {
+	health: 40
+}
+
+party Heroes = [Hero, Goblin,]

@@ -36,6 +36,15 @@ static void _logSyntacticAnalyzerAction(const char * functionName) {
 
 /* PUBLIC FUNCTIONS */
 
+/**
+ * Reports the source line, but not the column: this project doesn't track
+ * columns yet (see the comment on "createToken" in Frontend.c), and
+ * printing an always-zero column would be misleading.
+ */
+void SyntacticErrorSemanticAction(const YYLTYPE * location, const char * message) {
+	logError(_logger, "%s (line %d).", message, location->first_line);
+}
+
 /** Program / declarations. */
 
 Program * ProgramSemanticAction(DeclarationList * declarations) {

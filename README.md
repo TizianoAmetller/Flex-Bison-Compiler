@@ -1,10 +1,10 @@
 [![✗](https://img.shields.io/badge/Release-v2.0.0-ffb600.svg?style=for-the-badge)](https://github.com/TizianoAmetller/Flex-Bison-Compiler/releases)
 
-[![✗](https://github.com/TizianoAmetller/Flex-Bison-Compiler/actions/workflows/pipeline.yaml/badge.svg?branch=production)](https://github.com/TizianoAmetller/Flex-Bison-Compiler/actions/workflows/pipeline.yaml)
+[![✗](https://github.com/TizianoAmetller/Flex-Bison-Compiler/actions/workflows/pipeline.yaml/badge.svg?branch=development)](https://github.com/TizianoAmetller/Flex-Bison-Compiler/actions/workflows/pipeline.yaml)
 
 # Flex-Bison-Compiler
 
-A base compiler example, developed with Flex and Bison.
+A compiler for a custom DSL for RPG combat simulation (units, abilities, turns and battles), developed in C with Flex and Bison. The current repository state corresponds to Stage 2: lexical analysis, syntactic analysis and AST construction only.
 
 * [Requirements](#requirements)
 * [Configuration](#configuration)
@@ -85,7 +85,12 @@ docker compose down
 
 ## CI/CD
 
-To trigger an automatic integration on every push or PR (_Pull Request_), you must activate _GitHub Actions_ in the _Settings_ tab. Use the following configuration:
+_GitHub Actions_ is disabled by default on a new repository, so the `pipeline.yaml` workflow (build + test on every push or PR) won't run until it's turned on manually:
+
+1. Open the repository on GitHub and go to the **Settings** tab.
+2. In the left sidebar, under **Code and automation**, click **Actions → General**.
+3. Under **Actions permissions**, select **Allow all actions and reusable workflows**.
+4. Apply the rest of the configuration below, then click **Save**.
 
 | Key                                                        | Value                                               |
 | :--------------------------------------------------------- | :-------------------------------------------------- |

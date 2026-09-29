@@ -10,6 +10,7 @@ A compiler for a custom DSL for RPG combat simulation (units, abilities, turns a
 * [Configuration](#configuration)
 * [Commands](#commands)
 * [CI/CD](#cicd)
+* [Notes](#notes)
 * [Recommended Extensions](#recommended-extensions)
 
 ## Requirements
@@ -99,6 +100,16 @@ _GitHub Actions_ is disabled by default on a new repository, so the `pipeline.ya
 | `Artifact and log retention`                               | `30 days`                                           |
 | `Fork pull request workflows from outside collaborators`   | `Require approval for all outside collaborators`    |
 | `Workflow permissions`                                     | `Read repository contents and packages permissions` |
+
+## Notes
+
+This repository is currently 3 commits behind `Alpha-Theta-Gamma-Mu/Flex-Bison-Compiler:development`
+(the base template). We reviewed the diff: one commit (`694d39a`, 2026-09-26) independently fixes
+the same bug we found and fixed ourselves in `UnknownLexemeAction` (it wasn't calling `pushToken`,
+so an invalid lexeme could leave already-built AST fragments unreleased); the other two (`d2014d3`,
+`e329b9c`, 2026-09-09) are testing-script, CI and Docker/CMake portability improvements, not
+functional for this delivery. We chose not to merge them at this stage to avoid unnecessary
+integration risk right before announcing a delivery commit hash; this can be revisited for Stage III.
 
 ## Recommended Extensions
 

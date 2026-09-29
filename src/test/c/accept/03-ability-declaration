@@ -1,0 +1,8 @@
+ability Slash on target {
+	deal self.attack - target.defense to target
+	log "Hero slashes {target} for {self.attack}"
+}
+
+ability Heal on target {
+	heal 2d6 to target
+}

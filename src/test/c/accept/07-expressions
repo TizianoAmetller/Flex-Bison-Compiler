@@ -1,0 +1,13 @@
+ability Test on target {
+	if (self.attack + 1 * 2 - 3 / 1 >= target.defense and not (self.speed <= target.speed) or self.health == 0) {
+		deal 1d20 to target
+	}
+
+	apply Poison to target for 3
+
+	log "just testing true and false literals"
+
+	if (true and false) {
+		log "unreachable"
+	}
+}

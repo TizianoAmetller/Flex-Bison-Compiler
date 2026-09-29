@@ -3,9 +3,8 @@
 /* MODULE INTERNAL STATE */
 
 static bool _logIgnoredLexemes = true;
-static InputBuffer * _inputBuffer = NULL;
-static LexicalAnalyzer * _lexicalAnalyzer = NULL;
 static Logger * _logger = NULL;
+static LexicalAnalyzer * _lexicalAnalyzer = NULL;
 
 /** Shutdown module's internal state. */
 void _shutdownFlexActionsModule() {
@@ -14,15 +13,10 @@ void _shutdownFlexActionsModule() {
 		destroyLogger(_logger);
 		_logger = NULL;
 	}
-	if (_inputBuffer != NULL) {
-		destroyInputBuffer(_inputBuffer);
-		_inputBuffer = NULL;
-	}
 	_lexicalAnalyzer = NULL;
 }
 
 ModuleDestructor initializeFlexActionsModule(LexicalAnalyzer * lexicalAnalyzer) {
-	_inputBuffer = NULL;
 	_lexicalAnalyzer = lexicalAnalyzer;
 	_logger = createLogger("FlexActions");
 	_logIgnoredLexemes = getBooleanOrDefault("LOG_IGNORED_LEXEMES", _logIgnoredLexemes);
@@ -52,22 +46,17 @@ static void _logTokenAction(const char * actionName, Token * token) {
 
 /* PUBLIC FUNCTIONS */
 
-CompilationStatus ArithmeticOperatorLexemeAction(TokenLabel label) {
-	Token * token = createToken(_lexicalAnalyzer, label);
+CompilationStatus DiceLexemeAction() {
+	Token * token = createToken(_lexicalAnalyzer, DICE);
+	int count = 0;
+	int sides = 0;
+	sscanf(token->lexeme, "%dd%d", &count, &sides);
+	token->semanticValue->dice.count = count;
+	token->semanticValue->dice.sides = sides;
 	_logTokenAction(__FUNCTION__, token);
 	CompilationStatus status = pushToken(_lexicalAnalyzer, token);
 	destroyToken(token);
 	return status;
-}
-
-CompilationStatus EnterImportExpressionLexemeAction(FlexContext context) {
-	if (_logIgnoredLexemes) {
-		Token * token = createToken(_lexicalAnalyzer, OPEN_BRACE);
-		_logTokenAction(__FUNCTION__, token);
-		destroyToken(token);
-	}
-	enterLexicalAnalyzerContext(_lexicalAnalyzer, context);
-	return IN_PROGRESS;
 }
 
 CompilationStatus EnterMultilineCommentLexemeAction(FlexContext context) {
@@ -81,17 +70,23 @@ CompilationStatus EnterMultilineCommentLexemeAction(FlexContext context) {
 }
 
 CompilationStatus EOFLexemeAction() {
-	CompilationStatus status = IN_PROGRESS;
 	Token * token = createToken(_lexicalAnalyzer, 0);
 	_logTokenAction(__FUNCTION__, token);
-	if (!popInputBuffer(_lexicalAnalyzer)) {
-		status = pushToken(_lexicalAnalyzer, token);
-		FlexContext context = currentLexicalAnalyzerContext(_lexicalAnalyzer);
-		if (0 < context) {
-			logError(_logger, "The final context is not closed (context=%d).", context);
-			status = FAILED;
-		}
+	CompilationStatus status = pushToken(_lexicalAnalyzer, token);
+	FlexContext context = currentLexicalAnalyzerContext(_lexicalAnalyzer);
+	if (0 < context) {
+		logError(_logger, "The final context is not closed (context=%d).", context);
+		status = FAILED;
 	}
+	destroyToken(token);
+	return status;
+}
+
+CompilationStatus IdentifierLexemeAction() {
+	Token * token = createToken(_lexicalAnalyzer, ID);
+	token->semanticValue->string = strdup(token->lexeme);
+	_logTokenAction(__FUNCTION__, token);
+	CompilationStatus status = pushToken(_lexicalAnalyzer, token);
 	destroyToken(token);
 	return status;
 }
@@ -114,15 +109,12 @@ CompilationStatus IntegerLexemeAction() {
 	return status;
 }
 
-CompilationStatus LeaveImportExpressionLexemeAction() {
-	pushInputBuffer(_inputBuffer);
-	leaveLexicalAnalyzerContext(_lexicalAnalyzer);
-	if (_logIgnoredLexemes) {
-		Token * token = createToken(_lexicalAnalyzer, CLOSE_BRACE);
-		_logTokenAction(__FUNCTION__, token);
-		destroyToken(token);
-	}
-	return IN_PROGRESS;
+CompilationStatus KeywordLexemeAction(TokenLabel label) {
+	Token * token = createToken(_lexicalAnalyzer, label);
+	_logTokenAction(__FUNCTION__, token);
+	CompilationStatus status = pushToken(_lexicalAnalyzer, token);
+	destroyToken(token);
+	return status;
 }
 
 CompilationStatus LeaveMultilineCommentLexemeAction() {
@@ -135,7 +127,7 @@ CompilationStatus LeaveMultilineCommentLexemeAction() {
 	return IN_PROGRESS;
 }
 
-CompilationStatus ParenthesisLexemeAction(TokenLabel label) {
+CompilationStatus PunctuationLexemeAction(TokenLabel label) {
 	Token * token = createToken(_lexicalAnalyzer, label);
 	_logTokenAction(__FUNCTION__, token);
 	CompilationStatus status = pushToken(_lexicalAnalyzer, token);
@@ -143,14 +135,16 @@ CompilationStatus ParenthesisLexemeAction(TokenLabel label) {
 	return status;
 }
 
-CompilationStatus SubexpressionLexemeAction() {
-	Token * token = createToken(_lexicalAnalyzer, IGNORED);
-	_inputBuffer = createInputBuffer(_lexicalAnalyzer, token->lexeme);
-	if (_logIgnoredLexemes) {
-		_logTokenAction(__FUNCTION__, token);
-	}
+CompilationStatus StringLexemeAction() {
+	Token * token = createToken(_lexicalAnalyzer, STRING);
+	/** Strips the surrounding double-quotes off the matched lexeme. */
+	char * text = (char *) calloc(token->length - 1, sizeof(char));
+	strncpy(text, token->lexeme + 1, token->length - 2);
+	token->semanticValue->string = text;
+	_logTokenAction(__FUNCTION__, token);
+	CompilationStatus status = pushToken(_lexicalAnalyzer, token);
 	destroyToken(token);
-	return IN_PROGRESS;
+	return status;
 }
 
 CompilationStatus UnknownLexemeAction() {

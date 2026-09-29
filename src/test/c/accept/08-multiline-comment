@@ -1,0 +1,9 @@
+/**
+ * A unit declaration wrapped in comments, to check that both block comments
+ * and line comments are correctly ignored by the lexer.
+ */
+unit Hero { // trailing line-comment
+	health: 100, /* inline block comment */ attack: 15,
+	defense: 5,
+	speed: 10
+}

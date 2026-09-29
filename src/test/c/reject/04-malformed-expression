@@ -1,0 +1,3 @@
+ability Broken on target {
+	deal self.attack + to target
+}

@@ -1,0 +1,9 @@
+ability AreaEffect on target {
+	for (member in allies) {
+		heal 1d4 to member
+	}
+
+	while (self.health < self.attack) {
+		heal 1 to self
+	}
+}

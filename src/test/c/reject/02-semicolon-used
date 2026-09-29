@@ -1,0 +1,3 @@
+ability Slash on target {
+	deal self.attack to target;
+}

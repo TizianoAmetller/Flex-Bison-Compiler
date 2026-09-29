@@ -1,0 +1,14 @@
+unit Hero at (0, 0) {
+	health: 100,
+	attack: 15,
+	defense: 5,
+	speed: 10
+	abilities: [Slash, Heal]
+}
+
+unit Goblin at (5, 2) {
+	health: 40,
+	attack: 8,
+	defense: 2,
+	speed: 6
+}

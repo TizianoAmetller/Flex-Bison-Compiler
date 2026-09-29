@@ -1,0 +1,46 @@
+unit Hero at (0, 0) {
+	health: 100,
+	attack: 15,
+	defense: 5,
+	speed: 10
+	abilities: [Slash, Heal]
+}
+
+unit Goblin at (5, 2) {
+	health: 40,
+	attack: 8,
+	defense: 2,
+	speed: 6
+}
+
+ability Slash on target: enemy {
+	deal self.attack - target.defense to target
+	log "Hero slashes {target} for {self.attack}"
+}
+
+ability Heal on target: ally, self {
+	heal 2d6 to target
+}
+
+ability Cleanse on target: ally {
+	for (member in all(allies)) {
+		heal 1 to member
+	}
+}
+
+on turn Hero {
+	if (nearest(enemy).health < 20) {
+		use Heal on self
+	} else {
+		use Slash on nearest(enemy)
+	}
+}
+
+on turn Goblin {
+	use Slash on nearest(enemy)
+}
+
+party Heroes = [Hero]
+encounter Goblins = [Goblin]
+
+battle: [Heroes, Goblins]

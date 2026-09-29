@@ -1,0 +1,3 @@
+ability Broken on target {
+	log "this string never closes
+}

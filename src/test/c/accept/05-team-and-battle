@@ -1,0 +1,18 @@
+unit Hero {
+	health: 100,
+	attack: 15,
+	defense: 5,
+	speed: 10
+}
+
+unit Goblin {
+	health: 40,
+	attack: 8,
+	defense: 2,
+	speed: 6
+}
+
+party Heroes = [Hero]
+encounter Goblins = [Goblin]
+
+battle: [Heroes, Goblins]

@@ -1,0 +1,11 @@
+ability Nested on target {
+	if (target.health < 10) {
+		if (self.speed > target.speed) {
+			deal 999 to target
+		} else {
+			heal 5 to self
+		}
+	} else {
+		log "target is healthy"
+	}
+}

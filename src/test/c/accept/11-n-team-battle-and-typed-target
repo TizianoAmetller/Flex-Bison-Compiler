@@ -1,0 +1,42 @@
+unit Hero {
+	health: 100,
+	attack: 15,
+	defense: 5,
+	speed: 10
+}
+
+unit Goblin {
+	health: 40,
+	attack: 8,
+	defense: 2,
+	speed: 6
+}
+
+unit Bandit {
+	health: 50,
+	attack: 10,
+	defense: 3,
+	speed: 8
+}
+
+/** No target-type restriction: any target is valid. */
+ability Slash on target {
+	deal self.attack - target.defense to target
+}
+
+/** Restricted to a single relational type. */
+ability Heal on target: ally {
+	heal 2d6 to target
+}
+
+/** Restricted to more than one relational type. */
+ability Cure on target: ally, self {
+	heal 1d4 to target
+}
+
+party Heroes = [Hero]
+encounter Goblins = [Goblin]
+encounter Bandits = [Bandit]
+
+/** A battle is not limited to exactly two teams. */
+battle: [Heroes, Goblins, Bandits]

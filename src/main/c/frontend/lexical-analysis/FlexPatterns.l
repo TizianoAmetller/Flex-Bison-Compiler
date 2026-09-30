@@ -22,6 +22,7 @@ extern CompilationStatus IgnoredLexemeAction();
 extern CompilationStatus IntegerLexemeAction();
 extern CompilationStatus KeywordLexemeAction(TokenLabel label);
 extern CompilationStatus LeaveMultilineCommentLexemeAction();
+extern CompilationStatus NumberTooLongLexemeAction();
 extern CompilationStatus PunctuationLexemeAction(TokenLabel label);
 extern CompilationStatus StringLexemeAction();
 extern CompilationStatus UnknownLexemeAction();
@@ -46,11 +47,26 @@ whitespace			[[:space:]]+
  * Capped at 9 digits: "IntegerLexemeAction" converts this with "atoi" into a
  * "signed int", and 9 digits (max 999999999) always fits safely under
  * INT_MAX (2147483647, 10 digits) regardless of the actual value, so this
- * bound alone rules out the conversion ever overflowing. A run of 10+ digits
- * still lexes (as two adjacent tokens), it just won't parse as one integer.
+ * bound alone rules out the conversion ever overflowing.
  */
 digit				[[:digit:]]{1,9}
+/**
+ * A run of digits of any length. It only exists to catch what "digit" can't
+ * hold (10+ digits, alone or as a side of a dice literal), so that such a
+ * number is reported as too long instead of being split into two adjacent
+ * numbers, which the parser would reject with a misleading message. It never
+ * wins over "digit" for 9 digits or fewer: on a tie Flex picks the rule that
+ * comes first, and the "digit" rules come first.
+ */
+digitRun			[[:digit:]]+
 identifier			[A-Za-z_][A-Za-z0-9_]*
+/**
+ * One multi-byte UTF-8 character (2 to 4 bytes). The language is ASCII-only,
+ * so a character like "é" outside a string or a comment is an error, but it
+ * is matched whole so the error names the character instead of its first
+ * byte alone, which is not valid UTF-8 on its own.
+ */
+utf8Character		[\xC2-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3}
 
 %%
 
@@ -130,10 +146,13 @@ identifier			[A-Za-z_][A-Za-z0-9_]*
  /** Literals. */
 {digit}"d"{digit}					{ return DiceLexemeAction(); }
 {digit}								{ return IntegerLexemeAction(); }
+{digitRun}"d"{digitRun}				{ return NumberTooLongLexemeAction(); }
+{digitRun}							{ return NumberTooLongLexemeAction(); }
 \"[^\"\n]*\"						{ return StringLexemeAction(); }
 {identifier}						{ return IdentifierLexemeAction(); }
 
 {whitespace}						{ return IgnoredLexemeAction(); }
+{utf8Character}						{ return UnknownLexemeAction(); }
 .									{ return UnknownLexemeAction(); }
 
 <<EOF>>								{ return EOFLexemeAction(); }

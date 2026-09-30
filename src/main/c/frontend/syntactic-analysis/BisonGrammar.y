@@ -92,54 +92,56 @@ void yyerror(const YYLTYPE * location, const char * message) {
  */
 %destructor { free($$); } <string>
 
-/** Terminals: literals. */
-%token <integer> INTEGER
-%token <dice> DICE
-%token <string> STRING
-%token <string> ID
+/**
+ * Every terminal below (but IGNORED and UNKNOWN) gets a string alias, which
+ * is what a syntax-error message shows instead of the symbolic token name:
+ * "expecting from" rather than "expecting FROM", "unexpected }" rather than
+ * "unexpected CLOSE_BRACE". A keyword or punctuation mark is aliased to its
+ * own lexeme, and a literal to a description of it.
+ *
+ * Terminals: literals.
+ */
+%token <integer> INTEGER "integer"
+%token <dice> DICE "dice roll"
+%token <string> STRING "string"
+%token <string> ID "identifier"
 
 /** Terminals: keywords. */
-%token <token> ABILITIES
-%token <token> ABILITY
-%token <token> AND
-%token <token> APPLY
-%token <token> ARENA
-%token <token> AROUND
-%token <token> AT
-%token <token> AWAY
-%token <token> BATTLE
-%token <token> DEAL
-%token <token> ELSE
-%token <token> ENCOUNTER
-%token <token> FALSE
-%token <token> FOR
-%token <token> FROM
-%token <token> HEAL
-%token <token> IF
-%token <token> IN
-%token <token> LOG
-%token <token> MOVE
-%token <token> NOT
-%token <token> OF
-%token <token> ON
-%token <token> OR
-%token <token> PARTY
-%token <token> RADIUS
-%token <token> TO
-%token <token> TOWARD
-%token <token> TRUE
-%token <token> TURN
-%token <token> UNIT
-%token <token> USE
-%token <token> WHILE
+%token <token> ABILITIES "abilities"
+%token <token> ABILITY "ability"
+%token <token> AND "and"
+%token <token> APPLY "apply"
+%token <token> ARENA "arena"
+%token <token> AROUND "around"
+%token <token> AT "at"
+%token <token> AWAY "away"
+%token <token> BATTLE "battle"
+%token <token> DEAL "deal"
+%token <token> ELSE "else"
+%token <token> ENCOUNTER "encounter"
+%token <token> FALSE "false"
+%token <token> FOR "for"
+%token <token> FROM "from"
+%token <token> HEAL "heal"
+%token <token> IF "if"
+%token <token> IN "in"
+%token <token> LOG "log"
+%token <token> MOVE "move"
+%token <token> NOT "not"
+%token <token> OF "of"
+%token <token> ON "on"
+%token <token> OR "or"
+%token <token> PARTY "party"
+%token <token> RADIUS "radius"
+%token <token> TO "to"
+%token <token> TOWARD "toward"
+%token <token> TRUE "true"
+%token <token> TURN "turn"
+%token <token> UNIT "unit"
+%token <token> USE "use"
+%token <token> WHILE "while"
 
-/**
- * Terminals: punctuation and operators. Each one gets a string alias (e.g.
- * "{" for OPEN_BRACE), so a syntax-error message names the actual character
- * ("unexpected '{'") instead of the symbolic token name ("unexpected
- * OPEN_BRACE") -- the same idea as the upstream template's own alias for
- * OPEN_BRACE.
- */
+/** Terminals: punctuation and operators. */
 %token <token> ASSIGN "="
 %token <token> CLOSE_BRACE "}"
 %token <token> CLOSE_BRACKET "]"
@@ -173,6 +175,7 @@ void yyerror(const YYLTYPE * location, const char * message) {
 %type <position> aroundClause
 %type <attribute> attribute
 %type <attributeList> attributeList
+%type <attributeList> attributeListWithComma
 %type <battleDeclaration> battleDeclaration
 %type <callSuffix> callSuffix
 %type <declaration> declaration
@@ -241,9 +244,33 @@ declaration: unitDeclaration									{ $$ = UnitDeclarationSemanticAction($1); }
 	| battleDeclaration											{ $$ = BattleDeclarationSemanticAction($1); }
 	;
 
-/** unit <name> [at (<x>, <y>)] { <attributes> [abilities: [<id>, ...]] } */
-unitDeclaration: UNIT ID positionClause OPEN_BRACE attributeList abilitiesClause CLOSE_BRACE
+/**
+ * unit <name> [at (<x>, <y>)] { <attributes> [,] [abilities: [<id>, ...]] }
+ *
+ * Attributes are separated by commas, with none after the last one, like
+ * every other list in the language. The one exception is a comma right
+ * before "abilities:", which reads naturally ("speed: 6, abilities: [...]")
+ * and so is accepted too, as is no comma at all there. That takes three
+ * alternatives:
+ *
+ *   1. no abilities clause: the list must end without a comma, so
+ *      "speed: 6, }" is rejected (see reject/08 and reject/19);
+ *   2. an abilities clause right after the list, with no comma;
+ *   3. an abilities clause after a list that ends in a comma.
+ *
+ * They can't be folded into a single rule with an optional comma before the
+ * clause: after an attribute, a COMMA lookahead could be either a separator
+ * or that optional comma, and one token can't tell them apart, so Bison
+ * reports a shift/reduce conflict. Splitting the lists (attributeList and
+ * attributeListWithComma) postpones the decision to the token after the
+ * comma, where an ID starts another attribute and ABILITIES starts the clause.
+ */
+unitDeclaration: UNIT ID positionClause OPEN_BRACE attributeList CLOSE_BRACE
+																{ $$ = UnitSemanticAction($ID, $positionClause, $attributeList, NULL); }
+	| UNIT ID positionClause OPEN_BRACE attributeList abilitiesClause CLOSE_BRACE
 																{ $$ = UnitSemanticAction($ID, $positionClause, $attributeList, $abilitiesClause); }
+	| UNIT ID positionClause OPEN_BRACE attributeListWithComma abilitiesClause CLOSE_BRACE
+																{ $$ = UnitSemanticAction($ID, $positionClause, $attributeListWithComma, $abilitiesClause); }
 	;
 
 positionClause: AT OPEN_PARENTHESIS expression COMMA expression CLOSE_PARENTHESIS
@@ -251,21 +278,13 @@ positionClause: AT OPEN_PARENTHESIS expression COMMA expression CLOSE_PARENTHESI
 	| %empty													{ $$ = NULL; }
 	;
 
-/**
- * The trailing-comma alternative below ("attribute COMMA" with nothing
- * after) exists only so "speed: 6, abilities: [...]" parses -- without it,
- * the comma right before "abilities:" reads naturally but is rejected
- * ("unexpected ABILITIES, expecting ID"), since attributeList and
- * abilitiesClause are otherwise unrelated productions with no comma of
- * their own between them. This is unambiguous (unlike memberList, which
- * deliberately still rejects a trailing comma, see
- * reject/08-trailing-comma): after "attribute COMMA", an ID lookahead can
- * only start another attribute, while ABILITIES or CLOSE_BRACE can only
- * end the list.
- */
 attributeList: attribute COMMA attributeList					{ $$ = AddAttributeSemanticAction($1, $3); }
-	| attribute COMMA											{ $$ = AddAttributeSemanticAction($1, NULL); }
 	| attribute													{ $$ = AddAttributeSemanticAction($1, NULL); }
+	;
+
+/** The same list, but ending in a comma (see "unitDeclaration" for why). */
+attributeListWithComma: attribute COMMA attributeListWithComma	{ $$ = AddAttributeSemanticAction($1, $3); }
+	| attribute COMMA											{ $$ = AddAttributeSemanticAction($1, NULL); }
 	;
 
 /**
@@ -281,7 +300,6 @@ attribute: ID COLON expression									{ $$ = AttributeSemanticAction($1, $3); }
 
 abilitiesClause: ABILITIES COLON OPEN_BRACKET idList CLOSE_BRACKET
 																{ $$ = AbilitiesClauseSemanticAction($idList); }
-	| %empty													{ $$ = NULL; }
 	;
 
 idList: ID COMMA idList										{ $$ = AddIdentifierSemanticAction($1, $3); }

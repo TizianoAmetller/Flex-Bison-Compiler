@@ -156,10 +156,11 @@ IdentifierList * AddIdentifierSemanticAction(char * identifier, IdentifierList *
 }
 
 /**
- * The optional "abilities: [<id>, ...]" clause of a "unit" declaration is
- * just its inner "idList" passed through unchanged (NULL when the clause is
- * absent); this dedicated action exists only so every grammar rule has one,
- * matching the reference log, not because there's anything to build here.
+ * The "abilities: [<id>, ...]" clause of a "unit" declaration is just its
+ * inner "idList" passed through unchanged. (A unit without the clause never
+ * reaches this action: its own grammar alternative passes NULL.) This
+ * dedicated action exists only so every grammar rule has one, matching the
+ * reference log, not because there's anything to build here.
  */
 IdentifierList * AbilitiesClauseSemanticAction(IdentifierList * abilities) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);

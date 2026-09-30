@@ -127,6 +127,24 @@ CompilationStatus LeaveMultilineCommentLexemeAction() {
 	return IN_PROGRESS;
 }
 
+CompilationStatus NumberTooLongLexemeAction() {
+	Token * token = createToken(_lexicalAnalyzer, UNKNOWN);
+	_logTokenAction(__FUNCTION__, token);
+	/**
+	 * The lexeme is either a run of 10+ digits or a dice literal with such a
+	 * run on one side, i.e. what the "digit" pattern (capped at 9 digits, see
+	 * FlexPatterns.l) can't hold. The limit in the message must be kept in
+	 * sync with that pattern. As in "UnknownLexemeAction", the error is logged
+	 * here because Bison's own message can only say "unexpected UNKNOWN", and
+	 * the UNKNOWN token is pushed (instead of returning FAILED directly) so
+	 * Bison runs its stack cleanup and releases the AST fragments built so far.
+	 */
+	logError(_logger, "Number %s\"%s\"%s is too long: each number can have at most 9 digits (line %d).", INFORMATION_COLOR, token->lexeme, DEFAULT_COLOR, token->line);
+	CompilationStatus status = pushToken(_lexicalAnalyzer, token);
+	destroyToken(token);
+	return status;
+}
+
 CompilationStatus PunctuationLexemeAction(TokenLabel label) {
 	Token * token = createToken(_lexicalAnalyzer, label);
 	_logTokenAction(__FUNCTION__, token);

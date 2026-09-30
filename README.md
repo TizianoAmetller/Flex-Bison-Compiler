@@ -93,7 +93,7 @@ battle: [Heroes, Goblins]
 | Statements | `deal` / `heal <expr> to <expr>`, `use <ability> on <expr>`, `apply <effect> to <expr> for <expr>`, `move toward <expr>`, `move away from <expr>`, `log "<text>"`, `if (...) {...} [else {...}]`, `for (<id> in <expr>) {...}`, `while (...) {...}` | `log` text may hold `{...}` placeholders, to be filled in by the backend. |
 | Expressions | `+ - * /`, `== != < > <= >=`, `and or not`, `a.b`, dice (`2d6`), `radius <r> of <center>`, calls (`nearest(enemy)`) | `radius 5 of target` is every unit within distance 5 of `target`. `=` is only used to name a team. |
 
-Keywords are reserved, so words such as `at`, `of`, `radius`, `move` or `from` can't be used as unit, attribute or member names.
+Keywords are reserved, so words such as `at`, `of`, `radius`, `move` or `from` can't be used as unit, attribute or member names. Identifiers are ASCII-only, and a number has at most 9 digits (each side of a dice literal included).
 
 ### How the language evolved since Stage I
 

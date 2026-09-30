@@ -1,0 +1,3 @@
+ability Test on target {
+	deal 999999999d999999999 to target
+}

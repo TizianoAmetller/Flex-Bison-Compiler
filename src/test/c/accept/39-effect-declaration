@@ -1,0 +1,3 @@
+effect Poison on victim {
+	deal 2 to victim
+}

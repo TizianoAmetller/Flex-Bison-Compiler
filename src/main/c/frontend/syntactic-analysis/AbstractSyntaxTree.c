@@ -248,6 +248,16 @@ void destroyAbilityDeclaration(AbilityDeclaration * abilityDeclaration) {
 	}
 }
 
+void destroyEffectDeclaration(EffectDeclaration * effectDeclaration) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (effectDeclaration != NULL) {
+		free(effectDeclaration->name);
+		free(effectDeclaration->targetParameter);
+		destroyStatementList(effectDeclaration->body);
+		free(effectDeclaration);
+	}
+}
+
 void destroyTurnDeclaration(TurnDeclaration * turnDeclaration) {
 	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
 	if (turnDeclaration != NULL) {
@@ -309,6 +319,7 @@ void destroyDeclaration(Declaration * declaration) {
 			case ABILITY_DECLARATION: destroyAbilityDeclaration(declaration->abilityDeclaration); break;
 			case ARENA_DECLARATION: destroyArenaDeclaration(declaration->arenaDeclaration); break;
 			case BATTLE_DECLARATION: destroyBattleDeclaration(declaration->battleDeclaration); break;
+			case EFFECT_DECLARATION: destroyEffectDeclaration(declaration->effectDeclaration); break;
 			case TEAM_DECLARATION: destroyTeamDeclaration(declaration->teamDeclaration); break;
 			case TURN_DECLARATION: destroyTurnDeclaration(declaration->turnDeclaration); break;
 			case UNIT_DECLARATION: destroyUnitDeclaration(declaration->unitDeclaration); break;

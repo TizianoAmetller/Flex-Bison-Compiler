@@ -111,6 +111,14 @@ Declaration * BattleDeclarationSemanticAction(BattleDeclaration * battleDeclarat
 	return declaration;
 }
 
+Declaration * EffectDeclarationSemanticAction(EffectDeclaration * effectDeclaration) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Declaration * declaration = calloc(1, sizeof(Declaration));
+	declaration->effectDeclaration = effectDeclaration;
+	declaration->type = EFFECT_DECLARATION;
+	return declaration;
+}
+
 /** unit ... */
 
 UnitDeclaration * UnitSemanticAction(char * name, Position * position, AttributeList * attributes, IdentifierList * abilities) {
@@ -188,6 +196,15 @@ AbilityDeclaration * AbilitySemanticAction(char * name, char * targetParameter, 
 IdentifierList * TargetTypeClauseSemanticAction(IdentifierList * targetTypes) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	return targetTypes;
+}
+
+EffectDeclaration * EffectSemanticAction(char * name, char * targetParameter, StatementList * body) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	EffectDeclaration * effectDeclaration = calloc(1, sizeof(EffectDeclaration));
+	effectDeclaration->name = name;
+	effectDeclaration->targetParameter = targetParameter;
+	effectDeclaration->body = body;
+	return effectDeclaration;
 }
 
 TurnDeclaration * TurnSemanticAction(char * unitName, StatementList * body) {

@@ -30,6 +30,7 @@ typedef struct BattleDeclaration BattleDeclaration;
 typedef struct DealStatement DealStatement;
 typedef struct Declaration Declaration;
 typedef struct DeclarationList DeclarationList;
+typedef struct EffectDeclaration EffectDeclaration;
 typedef struct Expression Expression;
 typedef struct ExpressionList ExpressionList;
 typedef struct ForStatement ForStatement;
@@ -83,6 +84,7 @@ enum DeclarationType {
 	ABILITY_DECLARATION,
 	ARENA_DECLARATION,
 	BATTLE_DECLARATION,
+	EFFECT_DECLARATION,
 	TEAM_DECLARATION,
 	TURN_DECLARATION,
 	UNIT_DECLARATION
@@ -321,6 +323,22 @@ struct AbilityDeclaration {
 	StatementList * body;
 };
 
+/**
+ * effect <name> on <targetParameter> { <body> }
+ *
+ * What the effect named in "apply <name> to <target> for <turns>" does to the
+ * unit carrying it (e.g. "effect Poison on victim { deal 2 to victim }"). The
+ * body is the same statement language as an ability's, and "targetParameter"
+ * is a plain identifier bound to the affected unit inside it. When and how
+ * often the body runs while the effect lasts is a Stage III concern, and so
+ * is checking that every applied effect has a declaration.
+ */
+struct EffectDeclaration {
+	char * name;
+	char * targetParameter;
+	StatementList * body;
+};
+
 /** on turn <unitName> { <body> } */
 struct TurnDeclaration {
 	char * unitName;
@@ -389,6 +407,7 @@ struct Declaration {
 		AbilityDeclaration * abilityDeclaration;
 		ArenaDeclaration * arenaDeclaration;
 		BattleDeclaration * battleDeclaration;
+		EffectDeclaration * effectDeclaration;
 		TeamDeclaration * teamDeclaration;
 		TurnDeclaration * turnDeclaration;
 		UnitDeclaration * unitDeclaration;
@@ -419,6 +438,7 @@ void destroyCallSuffix(const CallSuffix callSuffix);
 void destroyDealStatement(DealStatement * dealStatement);
 void destroyDeclaration(Declaration * declaration);
 void destroyDeclarationList(DeclarationList * declarationList);
+void destroyEffectDeclaration(EffectDeclaration * effectDeclaration);
 void destroyExpression(Expression * expression);
 void destroyExpressionList(ExpressionList * expressionList);
 void destroyForStatement(ForStatement * forStatement);

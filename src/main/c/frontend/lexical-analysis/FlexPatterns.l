@@ -95,6 +95,7 @@ utf8Character		[\xC2-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80
 "away"								{ return KeywordLexemeAction(AWAY); }
 "battle"							{ return KeywordLexemeAction(BATTLE); }
 "deal"								{ return KeywordLexemeAction(DEAL); }
+"effect"							{ return KeywordLexemeAction(EFFECT); }
 "else"								{ return KeywordLexemeAction(ELSE); }
 "encounter"							{ return KeywordLexemeAction(ENCOUNTER); }
 "false"								{ return KeywordLexemeAction(FALSE); }

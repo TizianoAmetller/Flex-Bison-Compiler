@@ -41,6 +41,7 @@ void yyerror(const YYLTYPE * location, const char * message) {
 	CallSuffix callSuffix;
 	Declaration * declaration;
 	DeclarationList * declarationList;
+	EffectDeclaration * effectDeclaration;
 	Expression * expression;
 	ExpressionList * expressionList;
 	IdentifierList * identifierList;
@@ -71,6 +72,7 @@ void yyerror(const YYLTYPE * location, const char * message) {
 %destructor { destroyCallSuffix($$); } <callSuffix>
 %destructor { destroyDeclaration($$); } <declaration>
 %destructor { destroyDeclarationList($$); } <declarationList>
+%destructor { destroyEffectDeclaration($$); } <effectDeclaration>
 %destructor { destroyExpression($$); } <expression>
 %destructor { destroyExpressionList($$); } <expressionList>
 %destructor { destroyIdentifierList($$); } <identifierList>
@@ -117,6 +119,7 @@ void yyerror(const YYLTYPE * location, const char * message) {
 %token <token> AWAY "away"
 %token <token> BATTLE "battle"
 %token <token> DEAL "deal"
+%token <token> EFFECT "effect"
 %token <token> ELSE "else"
 %token <token> ENCOUNTER "encounter"
 %token <token> FALSE "false"
@@ -180,6 +183,7 @@ void yyerror(const YYLTYPE * location, const char * message) {
 %type <callSuffix> callSuffix
 %type <declaration> declaration
 %type <declarationList> declarationList
+%type <effectDeclaration> effectDeclaration
 %type <expression> expression
 %type <expressionList> argumentList
 %type <identifierList> abilitiesClause
@@ -242,6 +246,7 @@ declaration: unitDeclaration									{ $$ = UnitDeclarationSemanticAction($1); }
 	| teamDeclaration											{ $$ = TeamDeclarationSemanticAction($1); }
 	| arenaDeclaration											{ $$ = ArenaDeclarationSemanticAction($1); }
 	| battleDeclaration											{ $$ = BattleDeclarationSemanticAction($1); }
+	| effectDeclaration											{ $$ = EffectDeclarationSemanticAction($1); }
 	;
 
 /**
@@ -322,6 +327,18 @@ abilityDeclaration: ABILITY ID[name] ON ID[targetParameter] targetTypeClause OPE
 
 targetTypeClause: COLON idList									{ $$ = TargetTypeClauseSemanticAction($idList); }
 	| %empty											{ $$ = NULL; }
+	;
+
+/**
+ * effect <name> on <targetParameter> { <body> }
+ *
+ * Defines what the effect named in "apply <name> to <target> for <turns>"
+ * does to the unit carrying it. Like an ability, its second name is a plain
+ * identifier bound inside the body (here, to the affected unit), not a fixed
+ * keyword.
+ */
+effectDeclaration: EFFECT ID[name] ON ID[targetParameter] OPEN_BRACE statementList CLOSE_BRACE
+																{ $$ = EffectSemanticAction($name, $targetParameter, $statementList); }
 	;
 
 /** on turn <unitName> { <body> } */

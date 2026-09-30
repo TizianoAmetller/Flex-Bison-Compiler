@@ -29,6 +29,7 @@ Declaration * TurnDeclarationSemanticAction(TurnDeclaration * turnDeclaration);
 Declaration * TeamDeclarationSemanticAction(TeamDeclaration * teamDeclaration);
 Declaration * ArenaDeclarationSemanticAction(ArenaDeclaration * arenaDeclaration);
 Declaration * BattleDeclarationSemanticAction(BattleDeclaration * battleDeclaration);
+Declaration * EffectDeclarationSemanticAction(EffectDeclaration * effectDeclaration);
 
 /** unit ... */
 UnitDeclaration * UnitSemanticAction(char * name, Position * position, AttributeList * attributes, IdentifierList * abilities);
@@ -38,9 +39,10 @@ Attribute * AttributeSemanticAction(char * name, Expression * value);
 IdentifierList * AddIdentifierSemanticAction(char * identifier, IdentifierList * next);
 IdentifierList * AbilitiesClauseSemanticAction(IdentifierList * abilities);
 
-/** ability / on turn / party|encounter / arena / battle. */
+/** ability / effect / on turn / party|encounter / arena / battle. */
 AbilityDeclaration * AbilitySemanticAction(char * name, char * targetParameter, IdentifierList * targetTypes, StatementList * body);
 IdentifierList * TargetTypeClauseSemanticAction(IdentifierList * targetTypes);
+EffectDeclaration * EffectSemanticAction(char * name, char * targetParameter, StatementList * body);
 TurnDeclaration * TurnSemanticAction(char * unitName, StatementList * body);
 TeamDeclaration * TeamSemanticAction(TeamKind kind, char * name, MemberList * members);
 ArenaDeclaration * ArenaSemanticAction(Expression * width, Expression * height);

@@ -1,0 +1,3 @@
+ability Cataclysm on target {
+	deal 12d100 to target
+}

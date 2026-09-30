@@ -9,14 +9,7 @@ typedef struct {
 	/**
 	 * The root node of the AST.
 	 */
-	void * abstractSyntaxtTree;
-
-	/**
-	 * The computed value of the entire program (only for the calculator). You
-	 * should change or remove this field, or a random child will die, and it
-	 * will be your fault.
-	 */
-	signed int value;
+	void * abstractSyntaxTree;
 
 	// TODO: Add a symbol table.
 	// TODO: Add an stack to handle nested scopes.

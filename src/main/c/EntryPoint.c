@@ -15,9 +15,9 @@
  *	Stage II only covers the frontend (lexical + syntactic analysis): the
  *	semantic-analysis and backend (code-generation) phases are out of scope
  *	for this delivery per the QRF's own feedback, and are deferred to Stage
- *	III, where the original template's "Calculator"/"Generator" backend
- *	modules (which belonged to a different, arithmetic-only domain) will be
- *	replaced by the RPG combat simulator's actual domain logic.
+ *	III, which will add the RPG combat simulator's own backend from scratch
+ *	(the original template's "Calculator"/"Generator" backend, belonging to
+ *	a different, arithmetic-only domain, has been removed).
  */
 const int main(const int length, const char ** arguments) {
 	LexicalAnalyzer * lexicalAnalyzer = createLexicalAnalyzer();
@@ -26,8 +26,7 @@ const int main(const int length, const char ** arguments) {
 		logDebugging(logger, "Argument %d: \"%s\"", k, arguments[k]);
 	}
 	CompilerState compilerState = {
-		.abstractSyntaxtTree = NULL,
-		.value = 0
+		.abstractSyntaxTree = NULL
 	};
 	ModuleDestructor moduleDestructors[] = {
 		initializeAbstractSyntaxTreeModule(),
@@ -36,7 +35,7 @@ const int main(const int length, const char ** arguments) {
 		initializeFrontendModule(lexicalAnalyzer)
 	};
 	CompilationStatus compilationStatus = executeSyntacticAnalysis();
-	Program * program = compilerState.abstractSyntaxtTree;
+	Program * program = compilerState.abstractSyntaxTree;
 	if (compilationStatus == SUCCEEDED) {
 		logDebugging(logger, "The syntactic-analysis phase accepts the input program.");
 	}

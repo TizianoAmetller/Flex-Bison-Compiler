@@ -34,11 +34,10 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 	# The header files (*.h extension), are automatically included from the source-codes.
 	add_executable(Flex-Bison-Compiler
 		# Stage II is frontend-only (lexical + syntactic analysis) per the
-		# QRF's feedback; the arithmetic-domain backend below is out of
-		# scope here and will be replaced with the RPG simulator's own
-		# domain logic in Stage III.
-		# src/main/c/backend/code-generation/Generator.c
-		# src/main/c/backend/domain-specific/Calculator.c
+		# QRF's feedback; the original template's arithmetic-domain backend
+		# (Generator.c/Calculator.c) has been removed, since it referenced
+		# AST types that no longer exist in this grammar. Stage III will add
+		# the RPG simulator's own backend from scratch.
 		src/main/c/EntryPoint.c
 		src/main/c/frontend/Frontend.c
 		src/main/c/frontend/lexical-analysis/FlexActions.c

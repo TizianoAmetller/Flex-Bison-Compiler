@@ -78,9 +78,11 @@ identifier			[A-Za-z_][A-Za-z0-9_]*
 "in"								{ return KeywordLexemeAction(IN); }
 "log"								{ return KeywordLexemeAction(LOG); }
 "not"								{ return KeywordLexemeAction(NOT); }
+"of"								{ return KeywordLexemeAction(OF); }
 "on"								{ return KeywordLexemeAction(ON); }
 "or"								{ return KeywordLexemeAction(OR); }
 "party"								{ return KeywordLexemeAction(PARTY); }
+"radius"							{ return KeywordLexemeAction(RADIUS); }
 "to"								{ return KeywordLexemeAction(TO); }
 "true"								{ return KeywordLexemeAction(TRUE); }
 "turn"								{ return KeywordLexemeAction(TURN); }

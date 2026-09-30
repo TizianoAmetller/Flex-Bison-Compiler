@@ -100,6 +100,10 @@ void destroyExpression(Expression * expression) {
 				free(expression->functionName);
 				destroyExpressionList(expression->arguments);
 				break;
+			case RADIUS_EXPRESSION:
+				destroyExpression(expression->radius);
+				destroyExpression(expression->center);
+				break;
 			case BOOLEAN_EXPRESSION:
 			case DICE_EXPRESSION:
 			case INTEGER_EXPRESSION:
@@ -244,11 +248,29 @@ void destroyTurnDeclaration(TurnDeclaration * turnDeclaration) {
 	}
 }
 
+void destroyMember(Member * member) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (member != NULL) {
+		free(member->unitName);
+		destroyExpression(member->quantity);
+		free(member);
+	}
+}
+
+void destroyMemberList(MemberList * memberList) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (memberList != NULL) {
+		destroyMemberList(memberList->next);
+		destroyMember(memberList->member);
+		free(memberList);
+	}
+}
+
 void destroyTeamDeclaration(TeamDeclaration * teamDeclaration) {
 	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
 	if (teamDeclaration != NULL) {
 		free(teamDeclaration->name);
-		destroyIdentifierList(teamDeclaration->members);
+		destroyMemberList(teamDeclaration->members);
 		free(teamDeclaration);
 	}
 }

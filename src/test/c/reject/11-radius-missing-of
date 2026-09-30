@@ -1,0 +1,5 @@
+ability Fireball on target {
+	for (victim in radius 5 target) {
+		heal 1 to victim
+	}
+}

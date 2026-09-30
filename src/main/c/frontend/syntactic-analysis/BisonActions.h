@@ -39,8 +39,10 @@ IdentifierList * AddIdentifierSemanticAction(char * identifier, IdentifierList *
 /** ability / on turn / party|encounter / battle. */
 AbilityDeclaration * AbilitySemanticAction(char * name, char * targetParameter, IdentifierList * targetTypes, StatementList * body);
 TurnDeclaration * TurnSemanticAction(char * unitName, StatementList * body);
-TeamDeclaration * TeamSemanticAction(TeamKind kind, char * name, IdentifierList * members);
+TeamDeclaration * TeamSemanticAction(TeamKind kind, char * name, MemberList * members);
 BattleDeclaration * BattleSemanticAction(IdentifierList * teams);
+MemberList * AddMemberSemanticAction(Member * member, MemberList * next);
+Member * MemberSemanticAction(char * unitName, Expression * quantity);
 
 /** Statements. */
 StatementList * AddStatementSemanticAction(Statement * statement, StatementList * next);
@@ -58,6 +60,7 @@ Expression * BinaryExpressionSemanticAction(Expression * leftExpression, Express
 Expression * UnaryExpressionSemanticAction(Expression * operand, ExpressionType type);
 Expression * MemberExpressionSemanticAction(Expression * object, char * member);
 Expression * CallExpressionSemanticAction(char * functionName, ExpressionList * arguments);
+Expression * RadiusExpressionSemanticAction(Expression * radius, Expression * center);
 Expression * DiceExpressionSemanticAction(const DiceValue dice);
 Expression * IntegerExpressionSemanticAction(const int value);
 Expression * BooleanExpressionSemanticAction(const bool value);

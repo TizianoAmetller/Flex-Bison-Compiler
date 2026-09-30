@@ -1,0 +1,12 @@
+unit Archer {
+	health: 10, attack: 3, defense: 1, speed: 5
+}
+
+unit Hero {
+	health: 30, attack: 8, defense: 4, speed: 6
+}
+
+party Blue = [
+	Archer * 20,
+	Hero
+]

@@ -167,7 +167,7 @@ TurnDeclaration * TurnSemanticAction(char * unitName, StatementList * body) {
 	return turnDeclaration;
 }
 
-TeamDeclaration * TeamSemanticAction(TeamKind kind, char * name, IdentifierList * members) {
+TeamDeclaration * TeamSemanticAction(TeamKind kind, char * name, MemberList * members) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	TeamDeclaration * teamDeclaration = calloc(1, sizeof(TeamDeclaration));
 	teamDeclaration->kind = kind;
@@ -181,6 +181,22 @@ BattleDeclaration * BattleSemanticAction(IdentifierList * teams) {
 	BattleDeclaration * battleDeclaration = calloc(1, sizeof(BattleDeclaration));
 	battleDeclaration->teams = teams;
 	return battleDeclaration;
+}
+
+MemberList * AddMemberSemanticAction(Member * member, MemberList * next) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	MemberList * memberList = calloc(1, sizeof(MemberList));
+	memberList->member = member;
+	memberList->next = next;
+	return memberList;
+}
+
+Member * MemberSemanticAction(char * unitName, Expression * quantity) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Member * member = calloc(1, sizeof(Member));
+	member->unitName = unitName;
+	member->quantity = quantity;
+	return member;
 }
 
 /** Statements. */
@@ -317,6 +333,15 @@ Expression * CallExpressionSemanticAction(char * functionName, ExpressionList * 
 	expression->functionName = functionName;
 	expression->arguments = arguments;
 	expression->type = CALL_EXPRESSION;
+	return expression;
+}
+
+Expression * RadiusExpressionSemanticAction(Expression * radius, Expression * center) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Expression * expression = calloc(1, sizeof(Expression));
+	expression->radius = radius;
+	expression->center = center;
+	expression->type = RADIUS_EXPRESSION;
 	return expression;
 }
 

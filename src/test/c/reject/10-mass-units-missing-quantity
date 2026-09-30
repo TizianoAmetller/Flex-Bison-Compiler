@@ -1,0 +1,5 @@
+unit Archer {
+	health: 10
+}
+
+party Blue = [Archer *]

@@ -35,6 +35,8 @@ typedef struct HealStatement HealStatement;
 typedef struct IdentifierList IdentifierList;
 typedef struct IfStatement IfStatement;
 typedef struct LogStatement LogStatement;
+typedef struct Member Member;
+typedef struct MemberList MemberList;
 typedef struct Position Position;
 typedef struct Program Program;
 typedef struct Statement Statement;
@@ -118,6 +120,8 @@ enum ExpressionType {
 	MEMBER_EXPRESSION,
 	/** identifier '(' expressionList ')' (e.g., nearest(enemy)). */
 	CALL_EXPRESSION,
+	/** 'radius' expression 'of' expression (e.g., radius 5 of target). */
+	RADIUS_EXPRESSION,
 	/** Literals and references. */
 	BOOLEAN_EXPRESSION,
 	DICE_EXPRESSION,
@@ -179,6 +183,11 @@ struct Expression {
 		struct {
 			char * functionName;
 			ExpressionList * arguments;
+		};
+		/** RADIUS: units within "radius" distance of "center". */
+		struct {
+			Expression * radius;
+			Expression * center;
 		};
 		DiceValue dice;
 		int integerValue;
@@ -294,11 +303,30 @@ struct TurnDeclaration {
 	StatementList * body;
 };
 
-/** (party|encounter) <name> = [<id>, ...] */
+/**
+ * A single party/encounter member: a reference to a declared "unit" name,
+ * optionally repeated "quantity" times (e.g. "Archer * 20"). Both a plain
+ * "Hero" and a repeated "Archer * 20" reference the very same kind of "unit"
+ * declaration; whether a repeated unit is instantiated as N independent
+ * copies (sharing that declaration's attributes/abilities) is a
+ * semantic-analysis concern (Stage III).
+ */
+struct Member {
+	char * unitName;
+	/** NULL when no multiplier was given (a single instance). */
+	Expression * quantity;
+};
+
+struct MemberList {
+	Member * member;
+	MemberList * next;
+};
+
+/** (party|encounter) <name> = [<member>, ...] */
 struct TeamDeclaration {
 	TeamKind kind;
 	char * name;
-	IdentifierList * members;
+	MemberList * members;
 };
 
 /**
@@ -352,6 +380,8 @@ void destroyHealStatement(HealStatement * healStatement);
 void destroyIdentifierList(IdentifierList * identifierList);
 void destroyIfStatement(IfStatement * ifStatement);
 void destroyLogStatement(LogStatement * logStatement);
+void destroyMember(Member * member);
+void destroyMemberList(MemberList * memberList);
 void destroyPosition(Position * position);
 void destroyProgram(Program * program);
 void destroyStatement(Statement * statement);

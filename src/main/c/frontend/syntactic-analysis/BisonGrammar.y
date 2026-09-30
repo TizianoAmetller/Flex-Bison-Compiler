@@ -43,6 +43,8 @@ void yyerror(const YYLTYPE * location, const char * message) {
 	Expression * expression;
 	ExpressionList * expressionList;
 	IdentifierList * identifierList;
+	Member * member;
+	MemberList * memberList;
 	Position * position;
 	Program * program;
 	Statement * statement;
@@ -70,6 +72,8 @@ void yyerror(const YYLTYPE * location, const char * message) {
 %destructor { destroyExpression($$); } <expression>
 %destructor { destroyExpressionList($$); } <expressionList>
 %destructor { destroyIdentifierList($$); } <identifierList>
+%destructor { destroyMember($$); } <member>
+%destructor { destroyMemberList($$); } <memberList>
 %destructor { destroyPosition($$); } <position>
 %destructor { destroyStatement($$); } <statement>
 %destructor { destroyStatementList($$); } <statementList>
@@ -109,9 +113,11 @@ void yyerror(const YYLTYPE * location, const char * message) {
 %token <token> IN
 %token <token> LOG
 %token <token> NOT
+%token <token> OF
 %token <token> ON
 %token <token> OR
 %token <token> PARTY
+%token <token> RADIUS
 %token <token> TO
 %token <token> TRUE
 %token <token> TURN
@@ -159,6 +165,8 @@ void yyerror(const YYLTYPE * location, const char * message) {
 %type <expressionList> argumentList
 %type <identifierList> abilitiesClause
 %type <identifierList> idList
+%type <member> member
+%type <memberList> memberList
 %type <position> positionClause
 %type <program> program
 %type <statement> statement
@@ -259,9 +267,24 @@ turnDeclaration: ON TURN ID OPEN_BRACE statementList CLOSE_BRACE
 																{ $$ = TurnSemanticAction($3, $5); }
 	;
 
-teamDeclaration: PARTY ID ASSIGN OPEN_BRACKET idList CLOSE_BRACKET
+teamDeclaration: PARTY ID ASSIGN OPEN_BRACKET memberList CLOSE_BRACKET
 																{ $$ = TeamSemanticAction(PARTY_TEAM, $2, $5); }
-	| ENCOUNTER ID ASSIGN OPEN_BRACKET idList CLOSE_BRACKET	{ $$ = TeamSemanticAction(ENCOUNTER_TEAM, $2, $5); }
+	| ENCOUNTER ID ASSIGN OPEN_BRACKET memberList CLOSE_BRACKET	{ $$ = TeamSemanticAction(ENCOUNTER_TEAM, $2, $5); }
+	;
+
+memberList: member COMMA memberList							{ $$ = AddMemberSemanticAction($1, $3); }
+	| member											{ $$ = AddMemberSemanticAction($1, NULL); }
+	;
+
+/**
+ * A team member is either a single, individually-named unit (e.g. "Hero"),
+ * or a declared unit repeated a number of times (e.g. "Archer * 20"). Both
+ * forms reference the very same "unit" declaration; whether a repeated unit
+ * is instantiated as N independent copies (sharing that declaration's
+ * attributes/abilities) is a semantic-analysis concern (Stage III).
+ */
+member: ID MUL INTEGER											{ $$ = MemberSemanticAction($1, IntegerExpressionSemanticAction($3)); }
+	| ID												{ $$ = MemberSemanticAction($1, NULL); }
 	;
 
 /** battle: [<teamName>, ...] (any number of participating teams). */
@@ -314,6 +337,24 @@ expression: expression[left] ADD expression[right]			{ $$ = BinaryExpressionSema
 	| expression[left] AND expression[right]					{ $$ = BinaryExpressionSemanticAction($left, $right, AND_EXPRESSION); }
 	| expression[left] OR expression[right]					{ $$ = BinaryExpressionSemanticAction($left, $right, OR_EXPRESSION); }
 	| NOT expression											{ $$ = UnaryExpressionSemanticAction($2, NOT_EXPRESSION); }
+	/**
+	 * "radius <r> of <center>" denotes the collection of units within
+	 * distance "r" of "center" (e.g., used as "for (victim in radius 5 of
+	 * target) { ... }"). Computing that collection from the declared (x, y)
+	 * positions is a semantic-analysis concern (Stage III); Stage II only
+	 * represents it in the AST.
+	 *
+	 * "%prec DOT" (the tightest-binding declared precedence) makes this
+	 * production reduce as soon as "of expression" completes, instead of
+	 * greedily absorbing a trailing operator into "center": "radius 5 of
+	 * target + 1" parses as "(radius 5 of target) + 1", the same way "NOT
+	 * expression" (see its own "%right NOT" precedence, above) doesn't
+	 * greedily absorb a trailing operator into its operand either. Without an
+	 * explicit precedence here, this alternative's completed form directly
+	 * competes -unresolved- with every other binary-operator continuation at
+	 * the same point, since "expression" is shared by all of them.
+	 */
+	| RADIUS expression OF expression[center] %prec DOT		{ $$ = RadiusExpressionSemanticAction($2, $center); }
 	| expression[object] DOT ID								{ $$ = MemberExpressionSemanticAction($object, $3); }
 	| OPEN_PARENTHESIS expression CLOSE_PARENTHESIS			{ $$ = $2; }
 	| DICE														{ $$ = DiceExpressionSemanticAction($1); }

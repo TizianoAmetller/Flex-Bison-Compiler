@@ -4,7 +4,6 @@
 #include "../support/logging/Logger.h"
 #include "../support/type/CompilationStatus.h"
 #include "../support/type/FlexContext.h"
-#include "../support/type/InputBuffer.h"
 #include "../support/type/LexicalAnalyzer.h"
 #include "../support/type/ModuleDestructor.h"
 #include "../support/type/Token.h"
@@ -16,13 +15,6 @@
 
 /** Initialize module's internal state. */
 ModuleDestructor initializeFrontendModule(LexicalAnalyzer * lexicalAnalyzer);
-
-/**
- * Creates a new input buffer for the scanner.
- *
- * @see https://westes.github.io/flex/manual/Multiple-Input-Buffers.html
- */
-InputBuffer * createInputBuffer(LexicalAnalyzer * lexicalAnalyzer, const char * path);
 
 /**
  * Creates a new reentrant lexical-analyzer.
@@ -40,11 +32,6 @@ Token * createToken(LexicalAnalyzer * lexicalAnalyzer, TokenLabel label);
  * Returns the current lexical-analyzer context identifier.
  */
 FlexContext currentLexicalAnalyzerContext(LexicalAnalyzer * lexicalAnalyzer);
-
-/**
- * Destroys an input buffer.
- */
-void destroyInputBuffer(InputBuffer * inputBuffer);
 
 /**
  * Destroys a lexical-analyzer and its resources.
@@ -75,17 +62,6 @@ CompilationStatus executeSyntacticAnalysis();
  * Leaves the current nested lexical-analyzer context.
  */
 void leaveLexicalAnalyzerContext(LexicalAnalyzer * lexicalAnalyzer);
-
-/**
- * Pops the current input buffer from the lexical-analyzer. Returns true if
- * there is more input buffers available; false otherwise.
- */
-bool popInputBuffer(LexicalAnalyzer * lexicalAnalyzer);
-
-/**
- * Pushes a new input buffer to merge its tokens into the stream.
- */
-void pushInputBuffer(InputBuffer * inputBuffer);
 
 /**
  * Pushes a new token to the parser input stream.

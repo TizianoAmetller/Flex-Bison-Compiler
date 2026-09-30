@@ -23,7 +23,6 @@ ModuleDestructor initializeFrontendModule(LexicalAnalyzer * lexicalAnalyzer) {
 
 /* IMPORTED FUNCTIONS */
 
-extern bool flexHasBuffer(LexicalAnalyzer * lexicalAnalyzer);
 extern FlexContext flexCurrentContext(LexicalAnalyzer * lexicalAnalyzer);
 extern void flexEnterContext(LexicalAnalyzer * lexicalAnalyzer, FlexContext flexContext);
 extern void flexLeaveContext(LexicalAnalyzer * lexicalAnalyzer);
@@ -46,15 +45,6 @@ static const char * _compilationStatusAsString(const CompilationStatus compilati
 }
 
 /* PUBLIC FUNCTIONS */
-
-InputBuffer * createInputBuffer(LexicalAnalyzer * lexicalAnalyzer, const char * path) {
-	InputBuffer * inputBuffer = (InputBuffer *) calloc(1, sizeof(InputBuffer));
-	inputBuffer->bufferSizeInBytes = YY_BUF_SIZE;
-	inputBuffer->file = fopen(path, "r");
-	inputBuffer->lexicalAnalyzer = lexicalAnalyzer;
-	inputBuffer->buffer = yy_create_buffer(inputBuffer->file, inputBuffer->bufferSizeInBytes, lexicalAnalyzer->scanner);
-	return inputBuffer;
-}
 
 LexicalAnalyzer * createLexicalAnalyzer() {
 	LexicalAnalyzer * lexicalAnalyzer = (LexicalAnalyzer *) calloc(1, sizeof(LexicalAnalyzer));
@@ -93,29 +83,6 @@ Token * createToken(LexicalAnalyzer * lexicalAnalyzer, TokenLabel label) {
 
 FlexContext currentLexicalAnalyzerContext(LexicalAnalyzer * lexicalAnalyzer) {
 	return flexCurrentContext(lexicalAnalyzer);
-}
-
-void destroyInputBuffer(InputBuffer * inputBuffer) {
-	if (inputBuffer != NULL) {
-		if (inputBuffer->buffer != NULL) {
-			/**
-			 * @todo
-			 *	Because "yypop_buffer_state" in "popInputBuffer" deletes the
-			 *	buffer, this line produces a double-free error. However,
-			 *	commenting the line produces a memory-leak when a syntax error
-			 *	takes place inside a secondary input buffer.
-			 */
-			// yy_delete_buffer((YY_BUFFER_STATE) inputBuffer->buffer, (yyscan_t) inputBuffer->lexicalAnalyzer->scanner);
-			inputBuffer->buffer = NULL;
-		}
-		if (inputBuffer->file != NULL) {
-			fclose(inputBuffer->file);
-			inputBuffer->file = NULL;
-		}
-		inputBuffer->bufferSizeInBytes = 0;
-		inputBuffer->lexicalAnalyzer = NULL;
-		free(inputBuffer);
-	}
 }
 
 void destroyLexicalAnalyzer(LexicalAnalyzer * lexicalAnalyzer) {
@@ -178,15 +145,6 @@ CompilationStatus executeSyntacticAnalysis() {
 
 void leaveLexicalAnalyzerContext(LexicalAnalyzer * lexicalAnalyzer) {
 	flexLeaveContext(lexicalAnalyzer);
-}
-
-bool popInputBuffer(LexicalAnalyzer * lexicalAnalyzer) {
-	yypop_buffer_state((yyscan_t) lexicalAnalyzer->scanner);
-	return flexHasBuffer(lexicalAnalyzer);
-}
-
-void pushInputBuffer(InputBuffer * inputBuffer) {
-	yypush_buffer_state((YY_BUFFER_STATE) inputBuffer->buffer, (yyscan_t) inputBuffer->lexicalAnalyzer->scanner);
 }
 
 CompilationStatus pushToken(LexicalAnalyzer * lexicalAnalyzer, Token * token) {

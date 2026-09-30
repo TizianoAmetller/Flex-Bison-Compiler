@@ -27,6 +27,7 @@ Declaration * UnitDeclarationSemanticAction(UnitDeclaration * unitDeclaration);
 Declaration * AbilityDeclarationSemanticAction(AbilityDeclaration * abilityDeclaration);
 Declaration * TurnDeclarationSemanticAction(TurnDeclaration * turnDeclaration);
 Declaration * TeamDeclarationSemanticAction(TeamDeclaration * teamDeclaration);
+Declaration * ArenaDeclarationSemanticAction(ArenaDeclaration * arenaDeclaration);
 Declaration * BattleDeclarationSemanticAction(BattleDeclaration * battleDeclaration);
 
 /** unit ... */
@@ -37,14 +38,15 @@ Attribute * AttributeSemanticAction(char * name, Expression * value);
 IdentifierList * AddIdentifierSemanticAction(char * identifier, IdentifierList * next);
 IdentifierList * AbilitiesClauseSemanticAction(IdentifierList * abilities);
 
-/** ability / on turn / party|encounter / battle. */
+/** ability / on turn / party|encounter / arena / battle. */
 AbilityDeclaration * AbilitySemanticAction(char * name, char * targetParameter, IdentifierList * targetTypes, StatementList * body);
 IdentifierList * TargetTypeClauseSemanticAction(IdentifierList * targetTypes);
 TurnDeclaration * TurnSemanticAction(char * unitName, StatementList * body);
 TeamDeclaration * TeamSemanticAction(TeamKind kind, char * name, MemberList * members);
+ArenaDeclaration * ArenaSemanticAction(Expression * width, Expression * height);
 BattleDeclaration * BattleSemanticAction(IdentifierList * teams);
 MemberList * AddMemberSemanticAction(Member * member, MemberList * next);
-Member * MemberSemanticAction(char * unitName, Expression * quantity);
+Member * MemberSemanticAction(char * unitName, Expression * quantity, Position * position);
 
 /** Statements. */
 StatementList * AddStatementSemanticAction(Statement * statement, StatementList * next);
@@ -54,6 +56,7 @@ Statement * HealStatementSemanticAction(Expression * amount, Expression * target
 Statement * UseStatementSemanticAction(char * abilityName, Expression * target);
 Statement * ApplyStatementSemanticAction(char * effectName, Expression * target, Expression * duration);
 Statement * LogStatementSemanticAction(char * message);
+Statement * MoveStatementSemanticAction(MoveDirection direction, Expression * target);
 Statement * IfStatementSemanticAction(Expression * condition, StatementList * thenBranch, StatementList * elseBranch);
 Statement * ForStatementSemanticAction(char * iterator, Expression * collection, StatementList * body);
 Statement * WhileStatementSemanticAction(Expression * condition, StatementList * body);

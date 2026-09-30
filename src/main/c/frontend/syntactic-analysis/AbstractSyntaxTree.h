@@ -17,11 +17,13 @@ ModuleDestructor initializeAbstractSyntaxTreeModule();
 
 typedef enum DeclarationType DeclarationType;
 typedef enum ExpressionType ExpressionType;
+typedef enum MoveDirection MoveDirection;
 typedef enum StatementType StatementType;
 typedef enum TeamKind TeamKind;
 
 typedef struct AbilityDeclaration AbilityDeclaration;
 typedef struct ApplyStatement ApplyStatement;
+typedef struct ArenaDeclaration ArenaDeclaration;
 typedef struct Attribute Attribute;
 typedef struct AttributeList AttributeList;
 typedef struct BattleDeclaration BattleDeclaration;
@@ -37,6 +39,7 @@ typedef struct IfStatement IfStatement;
 typedef struct LogStatement LogStatement;
 typedef struct Member Member;
 typedef struct MemberList MemberList;
+typedef struct MoveStatement MoveStatement;
 typedef struct Position Position;
 typedef struct Program Program;
 typedef struct Statement Statement;
@@ -78,6 +81,7 @@ typedef struct {
 
 enum DeclarationType {
 	ABILITY_DECLARATION,
+	ARENA_DECLARATION,
 	BATTLE_DECLARATION,
 	TEAM_DECLARATION,
 	TURN_DECLARATION,
@@ -89,6 +93,12 @@ enum TeamKind {
 	ENCOUNTER_TEAM
 };
 
+/** Whether a "move" statement closes the distance to its target, or opens it. */
+enum MoveDirection {
+	AWAY_MOVE,
+	TOWARD_MOVE
+};
+
 enum StatementType {
 	APPLY_STATEMENT,
 	DEAL_STATEMENT,
@@ -96,6 +106,7 @@ enum StatementType {
 	HEAL_STATEMENT,
 	IF_STATEMENT,
 	LOG_STATEMENT,
+	MOVE_STATEMENT,
 	USE_STATEMENT,
 	WHILE_STATEMENT
 };
@@ -228,6 +239,18 @@ struct LogStatement {
 	char * message;
 };
 
+/**
+ * move toward <target> | move away from <target>
+ *
+ * The unit running the statement moves relative to "target" (a unit or a
+ * position-bearing expression); how far it gets is up to its speed, which is
+ * a Stage III concern.
+ */
+struct MoveStatement {
+	MoveDirection direction;
+	Expression * target;
+};
+
 struct IfStatement {
 	Expression * condition;
 	StatementList * thenBranch;
@@ -255,6 +278,7 @@ struct Statement {
 		HealStatement * healStatement;
 		IfStatement * ifStatement;
 		LogStatement * logStatement;
+		MoveStatement * moveStatement;
 		UseStatement * useStatement;
 		WhileStatement * whileStatement;
 	};
@@ -310,11 +334,19 @@ struct TurnDeclaration {
  * declaration; whether a repeated unit is instantiated as N independent
  * copies (sharing that declaration's attributes/abilities) is a
  * semantic-analysis concern (Stage III).
+ *
+ * The grammar only allows "at (x, y)" on a single member ("Hero at (0, 0)")
+ * and "around (x, y)" on a repeated one ("Archer * 20 around (10, 5)"), so
+ * "position" needs no separate kind: it is the exact spot when "quantity" is
+ * NULL, or the center of the group when it isn't. Either way it overrides
+ * the position declared on the unit itself, if any.
  */
 struct Member {
 	char * unitName;
 	/** NULL when no multiplier was given (a single instance). */
 	Expression * quantity;
+	/** NULL when the member has no position of its own. */
+	Position * position;
 };
 
 struct MemberList {
@@ -327,6 +359,18 @@ struct TeamDeclaration {
 	TeamKind kind;
 	char * name;
 	MemberList * members;
+};
+
+/**
+ * arena (<width>, <height>)
+ *
+ * The size of the battlefield, which is what gives every "at"/"around"
+ * position its bounds. Checking that there is at most one, and that every
+ * position fits inside it, is a semantic-analysis concern (Stage III).
+ */
+struct ArenaDeclaration {
+	Expression * width;
+	Expression * height;
 };
 
 /**
@@ -343,6 +387,7 @@ struct BattleDeclaration {
 struct Declaration {
 	union {
 		AbilityDeclaration * abilityDeclaration;
+		ArenaDeclaration * arenaDeclaration;
 		BattleDeclaration * battleDeclaration;
 		TeamDeclaration * teamDeclaration;
 		TurnDeclaration * turnDeclaration;
@@ -366,6 +411,7 @@ struct Program {
 
 void destroyAbilityDeclaration(AbilityDeclaration * abilityDeclaration);
 void destroyApplyStatement(ApplyStatement * applyStatement);
+void destroyArenaDeclaration(ArenaDeclaration * arenaDeclaration);
 void destroyAttribute(Attribute * attribute);
 void destroyAttributeList(AttributeList * attributeList);
 void destroyBattleDeclaration(BattleDeclaration * battleDeclaration);
@@ -382,6 +428,7 @@ void destroyIfStatement(IfStatement * ifStatement);
 void destroyLogStatement(LogStatement * logStatement);
 void destroyMember(Member * member);
 void destroyMemberList(MemberList * memberList);
+void destroyMoveStatement(MoveStatement * moveStatement);
 void destroyPosition(Position * position);
 void destroyProgram(Program * program);
 void destroyStatement(Statement * statement);

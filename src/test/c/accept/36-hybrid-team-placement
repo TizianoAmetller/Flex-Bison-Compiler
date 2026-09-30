@@ -1,0 +1,4 @@
+party Blue = [
+	Hero at (0, 0),
+	Archer * 20 around (10, 5)
+]

@@ -1,0 +1,3 @@
+ability Test on target {
+	move target
+}

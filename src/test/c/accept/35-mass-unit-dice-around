@@ -1,0 +1,1 @@
+encounter Goblins = [Goblin * 2d6 around (30, 10)]

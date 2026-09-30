@@ -162,6 +162,14 @@ void destroyLogStatement(LogStatement * logStatement) {
 	}
 }
 
+void destroyMoveStatement(MoveStatement * moveStatement) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (moveStatement != NULL) {
+		destroyExpression(moveStatement->target);
+		free(moveStatement);
+	}
+}
+
 void destroyIfStatement(IfStatement * ifStatement) {
 	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
 	if (ifStatement != NULL) {
@@ -201,6 +209,7 @@ void destroyStatement(Statement * statement) {
 			case HEAL_STATEMENT: destroyHealStatement(statement->healStatement); break;
 			case IF_STATEMENT: destroyIfStatement(statement->ifStatement); break;
 			case LOG_STATEMENT: destroyLogStatement(statement->logStatement); break;
+			case MOVE_STATEMENT: destroyMoveStatement(statement->moveStatement); break;
 			case USE_STATEMENT: destroyUseStatement(statement->useStatement); break;
 			case WHILE_STATEMENT: destroyWhileStatement(statement->whileStatement); break;
 		}
@@ -253,6 +262,7 @@ void destroyMember(Member * member) {
 	if (member != NULL) {
 		free(member->unitName);
 		destroyExpression(member->quantity);
+		destroyPosition(member->position);
 		free(member);
 	}
 }
@@ -275,6 +285,15 @@ void destroyTeamDeclaration(TeamDeclaration * teamDeclaration) {
 	}
 }
 
+void destroyArenaDeclaration(ArenaDeclaration * arenaDeclaration) {
+	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
+	if (arenaDeclaration != NULL) {
+		destroyExpression(arenaDeclaration->width);
+		destroyExpression(arenaDeclaration->height);
+		free(arenaDeclaration);
+	}
+}
+
 void destroyBattleDeclaration(BattleDeclaration * battleDeclaration) {
 	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
 	if (battleDeclaration != NULL) {
@@ -288,6 +307,7 @@ void destroyDeclaration(Declaration * declaration) {
 	if (declaration != NULL) {
 		switch (declaration->type) {
 			case ABILITY_DECLARATION: destroyAbilityDeclaration(declaration->abilityDeclaration); break;
+			case ARENA_DECLARATION: destroyArenaDeclaration(declaration->arenaDeclaration); break;
 			case BATTLE_DECLARATION: destroyBattleDeclaration(declaration->battleDeclaration); break;
 			case TEAM_DECLARATION: destroyTeamDeclaration(declaration->teamDeclaration); break;
 			case TURN_DECLARATION: destroyTurnDeclaration(declaration->turnDeclaration); break;

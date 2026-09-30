@@ -95,6 +95,14 @@ Declaration * TeamDeclarationSemanticAction(TeamDeclaration * teamDeclaration) {
 	return declaration;
 }
 
+Declaration * ArenaDeclarationSemanticAction(ArenaDeclaration * arenaDeclaration) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	Declaration * declaration = calloc(1, sizeof(Declaration));
+	declaration->arenaDeclaration = arenaDeclaration;
+	declaration->type = ARENA_DECLARATION;
+	return declaration;
+}
+
 Declaration * BattleDeclarationSemanticAction(BattleDeclaration * battleDeclaration) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Declaration * declaration = calloc(1, sizeof(Declaration));
@@ -198,6 +206,14 @@ TeamDeclaration * TeamSemanticAction(TeamKind kind, char * name, MemberList * me
 	return teamDeclaration;
 }
 
+ArenaDeclaration * ArenaSemanticAction(Expression * width, Expression * height) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	ArenaDeclaration * arenaDeclaration = calloc(1, sizeof(ArenaDeclaration));
+	arenaDeclaration->width = width;
+	arenaDeclaration->height = height;
+	return arenaDeclaration;
+}
+
 BattleDeclaration * BattleSemanticAction(IdentifierList * teams) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	BattleDeclaration * battleDeclaration = calloc(1, sizeof(BattleDeclaration));
@@ -213,11 +229,12 @@ MemberList * AddMemberSemanticAction(Member * member, MemberList * next) {
 	return memberList;
 }
 
-Member * MemberSemanticAction(char * unitName, Expression * quantity) {
+Member * MemberSemanticAction(char * unitName, Expression * quantity, Position * position) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Member * member = calloc(1, sizeof(Member));
 	member->unitName = unitName;
 	member->quantity = quantity;
+	member->position = position;
 	return member;
 }
 
@@ -293,6 +310,17 @@ Statement * LogStatementSemanticAction(char * message) {
 	Statement * statement = calloc(1, sizeof(Statement));
 	statement->logStatement = logStatement;
 	statement->type = LOG_STATEMENT;
+	return statement;
+}
+
+Statement * MoveStatementSemanticAction(MoveDirection direction, Expression * target) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	MoveStatement * moveStatement = calloc(1, sizeof(MoveStatement));
+	moveStatement->direction = direction;
+	moveStatement->target = target;
+	Statement * statement = calloc(1, sizeof(Statement));
+	statement->moveStatement = moveStatement;
+	statement->type = MOVE_STATEMENT;
 	return statement;
 }
 

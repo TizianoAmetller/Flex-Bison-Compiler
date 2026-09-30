@@ -34,6 +34,7 @@ void yyerror(const YYLTYPE * location, const char * message) {
 	/** Non-terminals. */
 
 	AbilityDeclaration * abilityDeclaration;
+	ArenaDeclaration * arenaDeclaration;
 	Attribute * attribute;
 	AttributeList * attributeList;
 	BattleDeclaration * battleDeclaration;
@@ -63,6 +64,7 @@ void yyerror(const YYLTYPE * location, const char * message) {
  * @see https://www.gnu.org/software/bison/manual/html_node/Destructor-Decl.html
  */
 %destructor { destroyAbilityDeclaration($$); } <abilityDeclaration>
+%destructor { destroyArenaDeclaration($$); } <arenaDeclaration>
 %destructor { destroyAttribute($$); } <attribute>
 %destructor { destroyAttributeList($$); } <attributeList>
 %destructor { destroyBattleDeclaration($$); } <battleDeclaration>
@@ -101,17 +103,22 @@ void yyerror(const YYLTYPE * location, const char * message) {
 %token <token> ABILITY
 %token <token> AND
 %token <token> APPLY
+%token <token> ARENA
+%token <token> AROUND
 %token <token> AT
+%token <token> AWAY
 %token <token> BATTLE
 %token <token> DEAL
 %token <token> ELSE
 %token <token> ENCOUNTER
 %token <token> FALSE
 %token <token> FOR
+%token <token> FROM
 %token <token> HEAL
 %token <token> IF
 %token <token> IN
 %token <token> LOG
+%token <token> MOVE
 %token <token> NOT
 %token <token> OF
 %token <token> ON
@@ -119,6 +126,7 @@ void yyerror(const YYLTYPE * location, const char * message) {
 %token <token> PARTY
 %token <token> RADIUS
 %token <token> TO
+%token <token> TOWARD
 %token <token> TRUE
 %token <token> TURN
 %token <token> UNIT
@@ -161,6 +169,8 @@ void yyerror(const YYLTYPE * location, const char * message) {
 
 /** Non-terminals. */
 %type <abilityDeclaration> abilityDeclaration
+%type <arenaDeclaration> arenaDeclaration
+%type <position> aroundClause
 %type <attribute> attribute
 %type <attributeList> attributeList
 %type <battleDeclaration> battleDeclaration
@@ -227,6 +237,7 @@ declaration: unitDeclaration									{ $$ = UnitDeclarationSemanticAction($1); }
 	| abilityDeclaration										{ $$ = AbilityDeclarationSemanticAction($1); }
 	| turnDeclaration											{ $$ = TurnDeclarationSemanticAction($1); }
 	| teamDeclaration											{ $$ = TeamDeclarationSemanticAction($1); }
+	| arenaDeclaration											{ $$ = ArenaDeclarationSemanticAction($1); }
 	| battleDeclaration											{ $$ = BattleDeclarationSemanticAction($1); }
 	;
 
@@ -318,9 +329,27 @@ memberList: member COMMA memberList							{ $$ = AddMemberSemanticAction($1, $3)
  * a repeated unit is instantiated as N independent copies (sharing that
  * declaration's attributes/abilities) is a semantic-analysis concern
  * (Stage III).
+ *
+ * Each form also takes its own optional position, which is what tells the
+ * two apart in the grammar: a single member is placed exactly ("Hero at (0,
+ * 0)", reusing the unit's "positionClause"), while a repeated one is placed
+ * as a group around a point ("Archer * 20 around (10, 5)"). Mixing them up
+ * ("Hero around (0, 0)", "Archer * 20 at (1, 1)") is deliberately a syntax
+ * error: a lone unit has nothing to surround, and twenty units can't share
+ * one exact spot.
  */
-member: ID MUL expression										{ $$ = MemberSemanticAction($1, $3); }
-	| ID												{ $$ = MemberSemanticAction($1, NULL); }
+member: ID[unitName] positionClause								{ $$ = MemberSemanticAction($unitName, NULL, $positionClause); }
+	| ID[unitName] MUL expression[quantity] aroundClause		{ $$ = MemberSemanticAction($unitName, $quantity, $aroundClause); }
+	;
+
+aroundClause: AROUND OPEN_PARENTHESIS expression[x] COMMA expression[y] CLOSE_PARENTHESIS
+																{ $$ = PositionSemanticAction($x, $y); }
+	| %empty													{ $$ = NULL; }
+	;
+
+/** arena (<width>, <height>) */
+arenaDeclaration: ARENA OPEN_PARENTHESIS expression[width] COMMA expression[height] CLOSE_PARENTHESIS
+																{ $$ = ArenaSemanticAction($width, $height); }
 	;
 
 /** battle: [<teamName>, ...] (any number of participating teams). */
@@ -340,6 +369,8 @@ statement: DEAL expression TO expression						{ $$ = DealStatementSemanticAction
 	| USE ID ON expression										{ $$ = UseStatementSemanticAction($2, $4); }
 	| APPLY ID TO expression FOR expression					{ $$ = ApplyStatementSemanticAction($2, $4, $6); }
 	| LOG STRING												{ $$ = LogStatementSemanticAction($2); }
+	| MOVE TOWARD expression[target]							{ $$ = MoveStatementSemanticAction(TOWARD_MOVE, $target); }
+	| MOVE AWAY FROM expression[target]						{ $$ = MoveStatementSemanticAction(AWAY_MOVE, $target); }
 	| IF OPEN_PARENTHESIS expression CLOSE_PARENTHESIS block[thenBranch] ELSE block[elseBranch]
 																{ $$ = IfStatementSemanticAction($3, $thenBranch, $elseBranch); }
 	| IF OPEN_PARENTHESIS expression CLOSE_PARENTHESIS block	{ $$ = IfStatementSemanticAction($3, $5, NULL); }
@@ -352,7 +383,7 @@ statement: DEAL expression TO expression						{ $$ = DealStatementSemanticAction
 /**
  * NOTE: there is deliberately no "statement: expression" (bare-expression)
  * alternative. Every meaningful action already has its own keyword-led
- * statement form (deal/heal/use/apply/log/if/for/while); allowing an
+ * statement form (deal/heal/use/apply/log/move/if/for/while); allowing an
  * arbitrary expression to stand alone as a statement would make the grammar
  * ambiguous, since statements have no separator (no ';', per the feedback):
  * "foo\n(bar)" could then be read either as two statements ("foo" and the

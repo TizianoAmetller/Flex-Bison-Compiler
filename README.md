@@ -35,7 +35,7 @@ Because there is no semantic analysis yet, some semantically invalid programs ar
 
 ## Language Overview
 
-A program is a sequence of declarations (units, abilities, turn behaviors, teams, an arena and a battle), in any order. Statements need no terminator.
+A program is a sequence of declarations (units, abilities, effects, turn behaviors, teams, an arena and a battle), in any order. Statements need no terminator.
 
 ```
 arena (40, 20)
@@ -59,12 +59,17 @@ unit Goblin {
 ability Slash on target: enemy {
 	deal self.attack - target.defense to target
 	log "Hero slashes {target} for {self.attack}"
+	apply Poison to target for 3
 }
 
 ability Fireball on target: enemy {
 	for (victim in radius 5 of target) {
 		deal 2d6 to victim
 	}
+}
+
+effect Poison on victim {
+	deal 2 to victim
 }
 
 on turn Hero {
@@ -84,8 +89,9 @@ battle: [Heroes, Goblins]
 
 | Construct  | Syntax                                                                                                     | Notes |
 | :--------- | :--------------------------------------------------------------------------------------------------------- | :---- |
-| Unit       | `unit <name> [at (<x>, <y>)] { <attribute>: <expr>, ... [abilities: [<ability>, ...]] }`                   | The attributes are `health`, `attack`, `defense` and `speed`. The unit's own `at` is its default position. |
-| Ability    | `ability <name> on <param>[: <type>, ...] { <statements> }`                                                | `<param>` names the target inside the body (by convention, `target`). The optional types (`ally`, `enemy`, `self`) restrict which targets are valid. |
+| Unit       | `unit <name> [: <tag>, ...] [at (<x>, <y>)] { <attribute>: <expr>, ... [abilities: [<ability>, ...]] }`    | The attributes are `health`, `attack`, `defense` and `speed`. The tags are the kinds of unit it is (for example `undead`). The unit's own `at` is its default position. |
+| Ability    | `ability <name> on <param>[: <type>, ...] { <statements> }`                                                | `<param>` names the target inside the body (by convention, `target`). The optional types restrict which targets are valid: a relation (`ally`, `enemy`, `self`) or a tag that units declare (`undead`). |
+| Effect     | `effect <name> on <param> { <statements> }`                                                                | What `apply <name> ...` does to the unit carrying the effect. `<param>` names that unit inside the body. |
 | Turn       | `on turn <unit> { <statements> }`                                                                          | What a unit does when its turn comes. |
 | Team       | `party` / `encounter` `<name> = [<member>, ...]`                                                           | A member is `Hero`, `Hero at (x, y)`, `Archer * 20` or `Archer * 2d6 around (x, y)`. A member's position overrides the unit's own. |
 | Arena      | `arena (<width>, <height>)`                                                                                | The size of the battlefield. |
@@ -97,11 +103,11 @@ Keywords are reserved, so words such as `at`, `of`, `radius`, `move` or `from` c
 
 ### How the language evolved since Stage I
 
-The language changed while the frontend was being built, largely following the feedback on the Stage I design. Attributes are now spelled out (`health`, `attack`, `defense`, `speed`, instead of `hp`, `atk`, `def`, `spd`) and statements no longer end with `;`. An ability belongs to the units that list it in `abilities:`, and it can say what kind of target it accepts. A battle takes any number of teams (`battle: [A, B, C]`) instead of exactly two.
+The language changed while the frontend was being built, largely following the feedback on the Stage I design. Attributes are now spelled out (`health`, `attack`, `defense`, `speed`, instead of `hp`, `atk`, `def`, `spd`) and statements no longer end with `;`. An ability belongs to the units that list it in `abilities:`, and it can say what kind of target it accepts, either a relation (`ally`, `enemy`, `self`) or a tag that units declare (`unit Skeleton: undead`). The effects an ability applies are defined with `effect`. A battle takes any number of teams (`battle: [A, B, C]`) instead of exactly two.
 
 The biggest addition is space. Units can have positions, an `arena` sets the size of the field, units can `move`, and `radius 5 of target` selects everything around a point, which is what area-of-effect abilities need. A team can also hold a whole mass of identical units (`Archer * 20`), scattered `around` a point, next to individually placed heroes. The quantity can be random too (`Goblin * 2d6`).
 
-What is still open for Stage III: effect definitions (what `apply Poison` actually does), variables and assignment, targeting by kind of unit (for example, abilities or resistances that depend on a unit being `undead`) beyond `ally`/`enemy`/`self`, and ability costs and cooldowns.
+What is still open for Stage III: variables and assignment, and ability costs and cooldowns.
 
 ## Requirements
 

@@ -230,6 +230,7 @@ void destroyUnitDeclaration(UnitDeclaration * unitDeclaration) {
 	logDebugging(_logger, "Executing destructor: %s", __FUNCTION__);
 	if (unitDeclaration != NULL) {
 		free(unitDeclaration->name);
+		destroyIdentifierList(unitDeclaration->tags);
 		destroyPosition(unitDeclaration->position);
 		destroyAttributeList(unitDeclaration->attributes);
 		destroyIdentifierList(unitDeclaration->abilities);

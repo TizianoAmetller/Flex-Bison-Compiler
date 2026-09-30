@@ -1,0 +1,3 @@
+unit Skeleton at (1, 2): undead {
+	health: 20
+}

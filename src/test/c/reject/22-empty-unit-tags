@@ -1,0 +1,3 @@
+unit Skeleton: {
+	health: 20
+}

@@ -1,0 +1,3 @@
+ability Smite on target: enemy, undead {
+	deal 10 to target
+}

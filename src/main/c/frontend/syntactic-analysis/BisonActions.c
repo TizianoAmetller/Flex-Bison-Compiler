@@ -121,14 +121,27 @@ Declaration * EffectDeclarationSemanticAction(EffectDeclaration * effectDeclarat
 
 /** unit ... */
 
-UnitDeclaration * UnitSemanticAction(char * name, Position * position, AttributeList * attributes, IdentifierList * abilities) {
+UnitDeclaration * UnitSemanticAction(char * name, IdentifierList * tags, Position * position, AttributeList * attributes, IdentifierList * abilities) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	UnitDeclaration * unitDeclaration = calloc(1, sizeof(UnitDeclaration));
 	unitDeclaration->name = name;
+	unitDeclaration->tags = tags;
 	unitDeclaration->position = position;
 	unitDeclaration->attributes = attributes;
 	unitDeclaration->abilities = abilities;
 	return unitDeclaration;
+}
+
+/**
+ * The ": <tag>, ..." clause after a unit's name is just its inner "idList"
+ * passed through unchanged. (A unit without the clause never reaches this
+ * action: the empty alternative of "tagClause" passes NULL.) See
+ * "AbilitiesClauseSemanticAction" for why this pass-through still gets its
+ * own named action.
+ */
+IdentifierList * TagClauseSemanticAction(IdentifierList * tags) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	return tags;
 }
 
 Position * PositionSemanticAction(Expression * x, Expression * y) {

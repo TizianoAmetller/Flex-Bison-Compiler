@@ -293,13 +293,20 @@ struct StatementList {
 };
 
 /**
- * unit <name> [at (<x>, <y>)] {
+ * unit <name> [: <tag>, ...] [at (<x>, <y>)] {
  *     health: <e>, attack: <e>, defense: <e>, speed: <e>
  *     [abilities: [<id>, ...]]
  * }
+ *
+ * The tags are the kinds of unit this one belongs to (e.g. "unit Skeleton:
+ * undead, beast { ... }"), which an ability can target by name ("on target:
+ * undead"), next to the relational types ally/enemy/self. Like those, they
+ * are plain identifiers, not keywords; resolving them is a Stage III concern.
  */
 struct UnitDeclaration {
 	char * name;
+	/** NULL when the unit declares no tags. */
+	IdentifierList * tags;
 	/** NULL when the position is omitted. */
 	Position * position;
 	AttributeList * attributes;

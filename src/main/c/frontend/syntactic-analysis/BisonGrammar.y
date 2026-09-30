@@ -195,6 +195,7 @@ void yyerror(const YYLTYPE * location, const char * message) {
 %type <statement> statement
 %type <statementList> block
 %type <statementList> statementList
+%type <identifierList> tagClause
 %type <identifierList> targetTypeClause
 %type <teamDeclaration> teamDeclaration
 %type <turnDeclaration> turnDeclaration
@@ -250,7 +251,7 @@ declaration: unitDeclaration									{ $$ = UnitDeclarationSemanticAction($1); }
 	;
 
 /**
- * unit <name> [at (<x>, <y>)] { <attributes> [,] [abilities: [<id>, ...]] }
+ * unit <name> [: <tag>, ...] [at (<x>, <y>)] { <attributes> [,] [abilities: [<id>, ...]] }
  *
  * Attributes are separated by commas, with none after the last one, like
  * every other list in the language. The one exception is a comma right
@@ -270,12 +271,24 @@ declaration: unitDeclaration									{ $$ = UnitDeclarationSemanticAction($1); }
  * attributeListWithComma) postpones the decision to the token after the
  * comma, where an ID starts another attribute and ABILITIES starts the clause.
  */
-unitDeclaration: UNIT ID positionClause OPEN_BRACE attributeList CLOSE_BRACE
-																{ $$ = UnitSemanticAction($ID, $positionClause, $attributeList, NULL); }
-	| UNIT ID positionClause OPEN_BRACE attributeList abilitiesClause CLOSE_BRACE
-																{ $$ = UnitSemanticAction($ID, $positionClause, $attributeList, $abilitiesClause); }
-	| UNIT ID positionClause OPEN_BRACE attributeListWithComma abilitiesClause CLOSE_BRACE
-																{ $$ = UnitSemanticAction($ID, $positionClause, $attributeListWithComma, $abilitiesClause); }
+unitDeclaration: UNIT ID tagClause positionClause OPEN_BRACE attributeList CLOSE_BRACE
+																{ $$ = UnitSemanticAction($ID, $tagClause, $positionClause, $attributeList, NULL); }
+	| UNIT ID tagClause positionClause OPEN_BRACE attributeList abilitiesClause CLOSE_BRACE
+																{ $$ = UnitSemanticAction($ID, $tagClause, $positionClause, $attributeList, $abilitiesClause); }
+	| UNIT ID tagClause positionClause OPEN_BRACE attributeListWithComma abilitiesClause CLOSE_BRACE
+																{ $$ = UnitSemanticAction($ID, $tagClause, $positionClause, $attributeListWithComma, $abilitiesClause); }
+	;
+
+/**
+ * The optional ": <tag>, ..." clause after a unit's name lists the kinds of
+ * unit it belongs to (e.g. "unit Skeleton: undead, beast { ... }"). It goes
+ * in the header, before the position, mirroring how an ability lists the
+ * kinds of target it accepts ("ability Smite on target: undead"). Tags are
+ * plain identifiers, not keywords, matched against those abilities in Stage
+ * III.
+ */
+tagClause: COLON idList											{ $$ = TagClauseSemanticAction($idList); }
+	| %empty													{ $$ = NULL; }
 	;
 
 positionClause: AT OPEN_PARENTHESIS expression COMMA expression CLOSE_PARENTHESIS

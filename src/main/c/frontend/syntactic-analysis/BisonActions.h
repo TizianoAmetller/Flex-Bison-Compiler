@@ -32,7 +32,8 @@ Declaration * BattleDeclarationSemanticAction(BattleDeclaration * battleDeclarat
 Declaration * EffectDeclarationSemanticAction(EffectDeclaration * effectDeclaration);
 
 /** unit ... */
-UnitDeclaration * UnitSemanticAction(char * name, Position * position, AttributeList * attributes, IdentifierList * abilities);
+UnitDeclaration * UnitSemanticAction(char * name, IdentifierList * tags, Position * position, AttributeList * attributes, IdentifierList * abilities);
+IdentifierList * TagClauseSemanticAction(IdentifierList * tags);
 Position * PositionSemanticAction(Expression * x, Expression * y);
 AttributeList * AddAttributeSemanticAction(Attribute * attribute, AttributeList * next);
 Attribute * AttributeSemanticAction(char * name, Expression * value);

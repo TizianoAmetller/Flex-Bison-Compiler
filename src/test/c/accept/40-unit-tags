@@ -1,0 +1,3 @@
+unit Skeleton: undead, beast {
+	health: 20
+}

@@ -101,7 +101,7 @@ The language changed while the frontend was being built, largely following the f
 
 The biggest addition is space. Units can have positions, an `arena` sets the size of the field, units can `move`, and `radius 5 of target` selects everything around a point, which is what area-of-effect abilities need. A team can also hold a whole mass of identical units (`Archer * 20`), scattered `around` a point, next to individually placed heroes. The quantity can be random too (`Goblin * 2d6`).
 
-What is still open for Stage III: effect definitions (what `apply Poison` actually does), variables and assignment, unit-type targeting, and ability costs and cooldowns.
+What is still open for Stage III: effect definitions (what `apply Poison` actually does), variables and assignment, targeting by kind of unit (for example, abilities or resistances that depend on a unit being `undead`) beyond `ally`/`enemy`/`self`, and ability costs and cooldowns.
 
 ## Requirements
 

@@ -151,6 +151,15 @@ CompilationStatus UnknownLexemeAction() {
 	Token * token = createToken(_lexicalAnalyzer, UNKNOWN);
 	_logTokenAction(__FUNCTION__, token);
 	/**
+	 * Bison's own syntax-error message only ever names the symbolic token
+	 * ("unexpected UNKNOWN"), never the actual character, since by the time
+	 * "yyerror" runs the lexeme itself is gone from its view. Logging it here,
+	 * at ERROR level (unlike "_logTokenAction" above, which is DEBUGGING-only
+	 * and so easy to miss under a stricter LOGGING_LEVEL), is what actually
+	 * tells the person which character was rejected.
+	 */
+	logError(_logger, "Unrecognized character %s\"%s\"%s (line %d).", INFORMATION_COLOR, token->lexeme, DEFAULT_COLOR, token->line);
+	/**
 	 * UNKNOWN is not a valid symbol anywhere in the grammar, so pushing it
 	 * (instead of returning FAILED directly, as this used to do) makes
 	 * Bison itself detect the syntax error. That is what makes it run its

@@ -1,4 +1,4 @@
-ability AreaEffect on target {
+ability RallyAllies on target {
 	for (member in allies) {
 		heal 1d4 to member
 	}

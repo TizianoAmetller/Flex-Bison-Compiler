@@ -42,7 +42,14 @@ extern CompilationStatus UnknownLexemeAction();
  * @see https://westes.github.io/flex/manual/Patterns.html
  */
 whitespace			[[:space:]]+
-digit				[[:digit:]]+
+/**
+ * Capped at 9 digits: "IntegerLexemeAction" converts this with "atoi" into a
+ * "signed int", and 9 digits (max 999999999) always fits safely under
+ * INT_MAX (2147483647, 10 digits) regardless of the actual value, so this
+ * bound alone rules out the conversion ever overflowing. A run of 10+ digits
+ * still lexes (as two adjacent tokens), it just won't parse as one integer.
+ */
+digit				[[:digit:]]{1,9}
 identifier			[A-Za-z_][A-Za-z0-9_]*
 
 %%

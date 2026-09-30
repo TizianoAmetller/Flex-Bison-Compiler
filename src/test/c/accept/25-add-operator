@@ -1,0 +1,3 @@
+ability Test on target {
+	deal 1 + 1 to target
+}

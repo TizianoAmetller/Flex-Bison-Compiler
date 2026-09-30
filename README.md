@@ -10,6 +10,11 @@ A compiler for a custom DSL for RPG combat simulation (units, abilities, turns a
 * [Configuration](#configuration)
 * [Commands](#commands)
 * [CI/CD](#cicd)
+* [Language](#language)
+  * [Syntax overview](#syntax-overview)
+  * [From Stage I to Stage II](#from-stage-i-to-stage-ii)
+  * [QRF feedback resolution](#qrf-feedback-resolution)
+  * [Deferred to Stage III](#deferred-to-stage-iii)
 * [Notes](#notes)
 * [Recommended Extensions](#recommended-extensions)
 
@@ -100,6 +105,91 @@ _GitHub Actions_ is disabled by default on a new repository, so the `pipeline.ya
 | `Artifact and log retention`                               | `30 days`                                           |
 | `Fork pull request workflows from outside collaborators`   | `Require approval for all outside collaborators`    |
 | `Workflow permissions`                                     | `Read repository contents and packages permissions` |
+
+## Language
+
+The DSL simulates turn-based RPG combat: units with stats and abilities, grouped into teams (`party`/`encounter`), that fight a `battle`. Stage II covers the lexer, the grammar and the AST only (§4 of the assignment's "Proyecto Especial" PDF); there is no semantic analysis and no backend yet, so nothing below is actually *evaluated* -- the grammar only has to be able to *represent* it. That part is Stage III's.
+
+### Syntax overview
+
+```
+unit Hero at (0, 0) {
+	health: 100,
+	attack: 15,
+	defense: 5,
+	speed: 10,
+	abilities: [Slash, Heal]
+}
+
+unit Archer {
+	health: 10, attack: 3, defense: 1, speed: 5
+}
+
+ability Slash on target: enemy {
+	deal self.attack - target.defense to target
+	log "Hero slashes {target} for {self.attack}"
+}
+
+ability Fireball on target {
+	for (victim in radius 5 of target) {
+		deal 2d6 to victim
+	}
+}
+
+on turn Hero {
+	if (nearest(enemy).health < 20) {
+		use Heal on self
+	} else {
+		use Slash on nearest(enemy)
+	}
+}
+
+party Heroes = [Hero, Archer * 20]
+encounter Goblins = [Goblin]
+
+battle: [Heroes, Goblins]
+```
+
+| Construct | Syntax | Notes |
+| :-------- | :----- | :---- |
+| Unit | `unit <name> [at (<x>, <y>)] { <attributes> [abilities: [<id>, ...]] }` | Attributes are `health`, `attack`, `defense`, `speed`: expressions, not fixed literals. |
+| Ability | `ability <name> on <target>[: <type>, ...] { <statements> }` | `target` is a bound parameter name, not a keyword; the optional clause restricts it to `ally`/`enemy`/`self` (or any combination). |
+| Turn | `on turn <unitName> { <statements> }` | What a unit does on its turn. |
+| Team | `party <name> = [<member>, ...]` / `encounter <name> = [<member>, ...]` | A member is either a named unit (`Hero`) or a declared unit repeated N times (`Archer * 20`, or `Archer * 2d6` for a randomized count). |
+| Battle | `battle: [<team>, ...]` | Any number of teams, not just two. |
+| Statements | `deal`/`heal <expr> to <expr>`, `use <ability> on <expr>`, `apply <effect> to <expr> for <expr>`, `log <string>`, `if (...) {...} [else {...}]`, `for (<id> in <expr>) {...}`, `while (<expr>) {...}` | No `;` terminator; no bare-expression statement (every action has its own keyword). |
+| Expressions | `+ - * /`, `== != < > <= >=`, `and or not`, `.` (member access), dice (`2d6`), `radius <r> of <center>` (spatial AoE), calls (`nearest(enemy)`, `all(allies)`), string interpolation (`"{target} healed"`) | `=` is reserved for team assignment; comparisons use `==`/`!=`, never `=`. |
+
+### From Stage I to Stage II
+
+The attribute names from the Stage I specification were renamed to remove abbreviations (QRF feedback point 4, below): `hp` → `health`, `atk` → `attack`, `def` → `defense`, `spd` → `speed`. `doc/Especificación.pdf` is kept as-is from the Stage I delivery (a frozen snapshot, including the old attribute names and the Stage I delivery date) rather than rewritten to match the current grammar; this section of the README, not that PDF, is the up-to-date reference for Stage II's actual syntax.
+
+### QRF feedback resolution
+
+The table below goes through the QRF's Stage I feedback (16 numbered points) and says what Stage II did about each one. Points about the Stage I *document itself* (wrong date, broken table of contents, mixed numbering, wording suggestions) aren't a frontend concern and are left for the Stage III report.
+
+| # | Feedback (summarized) | Resolution |
+| :-: | :--------------------- | :--------- |
+| 1 | Wrong report date. | N/A -- Stage I document issue. |
+| 2 | Table of contents doesn't render. | N/A -- Stage I document issue. |
+| 3 | Output is just a console log; wants some visual/dashboard representation. | Deferred: Stage II is frontend-only (no execution, so nothing to visualize yet); revisit once Stage III adds a backend. |
+| 4 | Don't abbreviate keywords (`spd`, `atk`, ...). | **Resolved.** `hp`→`health`, `atk`→`attack`, `def`→`defense`, `spd`→`speed`. |
+| 5 | Constructs, semantic restrictions and the resolution model are numbered as one mixed list. | N/A -- Stage I document issue. |
+| 6 | No way to express a large, unnamed quantity of identical units (e.g. "20 archers"). | **Resolved.** `Archer * 20` (or `Archer * 2d6`) as a team member. |
+| 7 | Target-individual abilities are too limiting; wants spatial AoE. | **Resolved** (syntax only). `radius <r> of <center>` expression, e.g. `for (victim in radius 5 of target) { ... }`; actually computing the collection from positions is Stage III. |
+| 8 | "Etiqueta" (tag) is used once, undefined. | Deferred to Stage III/Package B (a `tags: [...]` clause was designed but not implemented this delivery). |
+| 9 | Rename "modelo de resolución" to "mecanismo de evolución". | N/A -- wording suggestion for the report. |
+| 10 | Simulation looks deterministic; wants randomness in the evolution mechanism. | Partially addressed: dice notation (`2d6`) is randomness at the expression level; whether/how it drives turn resolution is Stage III semantics. |
+| 11 | Unclear which unit owns which ability. | **Resolved.** `abilities: [Slash, Heal]` clause on `unit`. |
+| 12 | Wants typed targets (resistances, querying a target's type). | Partially addressed: `on target: ally, enemy, self` gives *relational* typing; unit-type-based targeting is deferred to Stage III/Package B. |
+| 13 | `battle X vs Y` hardcodes exactly two teams. | **Resolved.** `battle: [Team1, Team2, ...]`, any number of teams. |
+| 14 | No target-selection mechanism; positioning should consider space, not just speed (implicit/explicit/hybrid). | Partially addressed: explicit `at (x, y)` position and the `radius ... of ...` spatial expression exist; implicit/hybrid mass positioning (formations), movement and the actual selection mechanism are deferred to Stage III/Package B. |
+| 15 | Don't require `;` between statements. | **Resolved.** No statement terminator. |
+| 16 | Support string interpolation in `log`. | **Resolved.** `log "Hero slashes {target} for {self.attack}"`. |
+
+### Deferred to Stage III
+
+Scoped out of this delivery on purpose, consistent with "Stage II should have the desired/ideal syntax; Stage III only needs to implement the essential part" (assignment FAQ): semantic analysis and the backend in general; formations and implicit/hybrid positioning for mass units; unit movement and an arena/terrain size; `effect` definitions (what `Poison` actually does); ability cost/cooldown/range; unit-type tags and type-based targeting; variables and assignment; and any visual/dashboard output.
 
 ## Notes
 

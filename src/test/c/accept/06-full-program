@@ -22,7 +22,7 @@ ability Heal on target: ally, self {
 	heal 2d6 to target
 }
 
-ability Cleanse on target: ally {
+ability GroupHeal on target: ally {
 	for (member in all(allies)) {
 		heal 1 to member
 	}

@@ -1,0 +1,3 @@
+ability Test on target {
+	apply Poison to target for 3
+}

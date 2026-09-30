@@ -125,30 +125,36 @@ void yyerror(const YYLTYPE * location, const char * message) {
 %token <token> USE
 %token <token> WHILE
 
-/** Terminals: punctuation and operators. */
-%token <token> ASSIGN
-%token <token> CLOSE_BRACE
-%token <token> CLOSE_BRACKET
-%token <token> CLOSE_COMMENT
-%token <token> CLOSE_PARENTHESIS
-%token <token> COLON
-%token <token> COMMA
-%token <token> DOT
-%token <token> EQUALS
-%token <token> GREATER_EQUAL
-%token <token> GREATER_THAN
-%token <token> LESS_EQUAL
-%token <token> LESS_THAN
-%token <token> NOT_EQUALS
-%token <token> OPEN_BRACE
-%token <token> OPEN_BRACKET
-%token <token> OPEN_COMMENT
-%token <token> OPEN_PARENTHESIS
+/**
+ * Terminals: punctuation and operators. Each one gets a string alias (e.g.
+ * "{" for OPEN_BRACE), so a syntax-error message names the actual character
+ * ("unexpected '{'") instead of the symbolic token name ("unexpected
+ * OPEN_BRACE") -- the same idea as the upstream template's own alias for
+ * OPEN_BRACE.
+ */
+%token <token> ASSIGN "="
+%token <token> CLOSE_BRACE "}"
+%token <token> CLOSE_BRACKET "]"
+%token <token> CLOSE_COMMENT "*/"
+%token <token> CLOSE_PARENTHESIS ")"
+%token <token> COLON ":"
+%token <token> COMMA ","
+%token <token> DOT "."
+%token <token> EQUALS "=="
+%token <token> GREATER_EQUAL ">="
+%token <token> GREATER_THAN ">"
+%token <token> LESS_EQUAL "<="
+%token <token> LESS_THAN "<"
+%token <token> NOT_EQUALS "!="
+%token <token> OPEN_BRACE "{"
+%token <token> OPEN_BRACKET "["
+%token <token> OPEN_COMMENT "/*"
+%token <token> OPEN_PARENTHESIS "("
 
-%token <token> ADD
-%token <token> DIV
-%token <token> MUL
-%token <token> SUB
+%token <token> ADD "+"
+%token <token> DIV "/"
+%token <token> MUL "*"
+%token <token> SUB "-"
 
 %token <token> IGNORED
 %token <token> UNKNOWN
@@ -185,11 +191,25 @@ void yyerror(const YYLTYPE * location, const char * message) {
  */
 %left OR
 %left AND
-%right NOT
+%precedence NOT
 %nonassoc EQUALS NOT_EQUALS LESS_THAN GREATER_THAN LESS_EQUAL GREATER_EQUAL
 %left ADD SUB
 %left MUL DIV
-%left DOT
+/**
+ * A dedicated level for "RADIUS expression OF expression" (see its %prec
+ * below), strictly between MUL/DIV and DOT. Using %prec DOT there (as this
+ * rule originally did) ties the rule's precedence with DOT's, and since DOT
+ * is %left, Bison breaks that tie by reducing -- so "radius 5 of
+ * target.health" was grouping as "(radius 5 of target).health" instead of
+ * "radius 5 of (target.health)". Placing RADIUS below DOT here makes DOT
+ * win that comparison instead (token precedence > rule precedence: shift,
+ * i.e. let ".health" extend "target" before closing the radius-of form),
+ * while still sitting above every other operator (ADD, MUL, comparisons,
+ * AND, OR: rule precedence > token precedence there, so those still reduce
+ * early, e.g. "radius 5 of target + 1" stays "(radius 5 of target) + 1").
+ */
+%precedence RADIUS
+%precedence DOT
 
 %%
 
@@ -212,7 +232,7 @@ declaration: unitDeclaration									{ $$ = UnitDeclarationSemanticAction($1); }
 
 /** unit <name> [at (<x>, <y>)] { <attributes> [abilities: [<id>, ...]] } */
 unitDeclaration: UNIT ID positionClause OPEN_BRACE attributeList abilitiesClause CLOSE_BRACE
-																{ $$ = UnitSemanticAction($2, $3, $5, $6); }
+																{ $$ = UnitSemanticAction($ID, $positionClause, $attributeList, $abilitiesClause); }
 	;
 
 positionClause: AT OPEN_PARENTHESIS expression COMMA expression CLOSE_PARENTHESIS
@@ -220,7 +240,20 @@ positionClause: AT OPEN_PARENTHESIS expression COMMA expression CLOSE_PARENTHESI
 	| %empty													{ $$ = NULL; }
 	;
 
+/**
+ * The trailing-comma alternative below ("attribute COMMA" with nothing
+ * after) exists only so "speed: 6, abilities: [...]" parses -- without it,
+ * the comma right before "abilities:" reads naturally but is rejected
+ * ("unexpected ABILITIES, expecting ID"), since attributeList and
+ * abilitiesClause are otherwise unrelated productions with no comma of
+ * their own between them. This is unambiguous (unlike memberList, which
+ * deliberately still rejects a trailing comma, see
+ * reject/08-trailing-comma): after "attribute COMMA", an ID lookahead can
+ * only start another attribute, while ABILITIES or CLOSE_BRACE can only
+ * end the list.
+ */
 attributeList: attribute COMMA attributeList					{ $$ = AddAttributeSemanticAction($1, $3); }
+	| attribute COMMA											{ $$ = AddAttributeSemanticAction($1, NULL); }
 	| attribute													{ $$ = AddAttributeSemanticAction($1, NULL); }
 	;
 
@@ -236,7 +269,7 @@ attribute: ID COLON expression									{ $$ = AttributeSemanticAction($1, $3); }
 	;
 
 abilitiesClause: ABILITIES COLON OPEN_BRACKET idList CLOSE_BRACKET
-																{ $$ = $4; }
+																{ $$ = AbilitiesClauseSemanticAction($idList); }
 	| %empty													{ $$ = NULL; }
 	;
 
@@ -254,11 +287,11 @@ idList: ID COMMA idList										{ $$ = AddIdentifierSemanticAction($1, $3); }
  * enemy, self"); "ally"/"enemy"/"self" are plain identifiers here too (not
  * keywords), resolved against actual team membership in Stage III.
  */
-abilityDeclaration: ABILITY ID ON ID targetTypeClause OPEN_BRACE statementList CLOSE_BRACE
-																{ $$ = AbilitySemanticAction($2, $4, $targetTypeClause, $7); }
+abilityDeclaration: ABILITY ID[name] ON ID[targetParameter] targetTypeClause OPEN_BRACE statementList CLOSE_BRACE
+																{ $$ = AbilitySemanticAction($name, $targetParameter, $targetTypeClause, $statementList); }
 	;
 
-targetTypeClause: COLON idList									{ $$ = $2; }
+targetTypeClause: COLON idList									{ $$ = TargetTypeClauseSemanticAction($idList); }
 	| %empty											{ $$ = NULL; }
 	;
 
@@ -278,12 +311,15 @@ memberList: member COMMA memberList							{ $$ = AddMemberSemanticAction($1, $3)
 
 /**
  * A team member is either a single, individually-named unit (e.g. "Hero"),
- * or a declared unit repeated a number of times (e.g. "Archer * 20"). Both
- * forms reference the very same "unit" declaration; whether a repeated unit
- * is instantiated as N independent copies (sharing that declaration's
- * attributes/abilities) is a semantic-analysis concern (Stage III).
+ * or a declared unit repeated a number of times (e.g. "Archer * 20", or
+ * "Archer * 2d6" for a randomized army size -- the quantity is a general
+ * "expression", not just a literal, matching "Member.quantity"'s type in
+ * the AST). Both forms reference the very same "unit" declaration; whether
+ * a repeated unit is instantiated as N independent copies (sharing that
+ * declaration's attributes/abilities) is a semantic-analysis concern
+ * (Stage III).
  */
-member: ID MUL INTEGER											{ $$ = MemberSemanticAction($1, IntegerExpressionSemanticAction($3)); }
+member: ID MUL expression										{ $$ = MemberSemanticAction($1, $3); }
 	| ID												{ $$ = MemberSemanticAction($1, NULL); }
 	;
 
@@ -292,7 +328,7 @@ battleDeclaration: BATTLE COLON OPEN_BRACKET idList CLOSE_BRACKET
 																{ $$ = BattleSemanticAction($4); }
 	;
 
-block: OPEN_BRACE statementList CLOSE_BRACE					{ $$ = $2; }
+block: OPEN_BRACE statementList CLOSE_BRACE					{ $$ = BlockSemanticAction($statementList); }
 	;
 
 statementList: statement statementList							{ $$ = AddStatementSemanticAction($1, $2); }
@@ -344,19 +380,21 @@ expression: expression[left] ADD expression[right]			{ $$ = BinaryExpressionSema
 	 * positions is a semantic-analysis concern (Stage III); Stage II only
 	 * represents it in the AST.
 	 *
-	 * "%prec DOT" (the tightest-binding declared precedence) makes this
-	 * production reduce as soon as "of expression" completes, instead of
-	 * greedily absorbing a trailing operator into "center": "radius 5 of
-	 * target + 1" parses as "(radius 5 of target) + 1", the same way "NOT
-	 * expression" (see its own "%right NOT" precedence, above) doesn't
-	 * greedily absorb a trailing operator into its operand either. Without an
-	 * explicit precedence here, this alternative's completed form directly
-	 * competes -unresolved- with every other binary-operator continuation at
-	 * the same point, since "expression" is shared by all of them.
+	 * "%prec RADIUS" (see that dedicated precedence level, above -- between
+	 * MUL/DIV and DOT) makes this production reduce as soon as "of
+	 * expression" completes for operators below it (e.g. "radius 5 of
+	 * target + 1" stays "(radius 5 of target) + 1"), while still letting a
+	 * trailing ".member" bind to "center" first (e.g. "radius 5 of
+	 * target.health" is "radius 5 of (target.health)", not
+	 * "(radius 5 of target).health"), because DOT's own precedence is
+	 * higher. Without a precedence here, this alternative's completed form
+	 * directly competes -unresolved- with every other binary-operator
+	 * continuation at the same point, since "expression" is shared by all of
+	 * them.
 	 */
-	| RADIUS expression OF expression[center] %prec DOT		{ $$ = RadiusExpressionSemanticAction($2, $center); }
+	| RADIUS expression OF expression[center] %prec RADIUS		{ $$ = RadiusExpressionSemanticAction($2, $center); }
 	| expression[object] DOT ID								{ $$ = MemberExpressionSemanticAction($object, $3); }
-	| OPEN_PARENTHESIS expression CLOSE_PARENTHESIS			{ $$ = $2; }
+	| OPEN_PARENTHESIS expression[inner] CLOSE_PARENTHESIS	{ $$ = ParenthesizedExpressionSemanticAction($inner); }
 	| DICE														{ $$ = DiceExpressionSemanticAction($1); }
 	| INTEGER													{ $$ = IntegerExpressionSemanticAction($1); }
 	| STRING													{ $$ = StringExpressionSemanticAction($1); }
@@ -368,11 +406,11 @@ expression: expression[left] ADD expression[right]			{ $$ = BinaryExpressionSema
 	 * shift/reduce conflict: "callSuffix" alone, deterministically, decides
 	 * from the OPEN_PARENTHESIS lookahead whether this is a call.
 	 */
-	| ID callSuffix												{ $$ = $callSuffix.isCall ? CallExpressionSemanticAction($1, $callSuffix.arguments) : IdentifierExpressionSemanticAction($1); }
+	| ID callSuffix												{ $$ = IdOrCallExpressionSemanticAction($ID, $callSuffix); }
 	;
 
-callSuffix: OPEN_PARENTHESIS argumentList CLOSE_PARENTHESIS	{ $$.isCall = true; $$.arguments = $2; }
-	| %empty													{ $$.isCall = false; $$.arguments = NULL; }
+callSuffix: OPEN_PARENTHESIS argumentList CLOSE_PARENTHESIS	{ $$ = CallSuffixSemanticAction($argumentList); }
+	| %empty													{ $$ = NoCallSuffixSemanticAction(); }
 	;
 
 argumentList: expression COMMA argumentList					{ $$ = AddExpressionSemanticAction($1, $3); }

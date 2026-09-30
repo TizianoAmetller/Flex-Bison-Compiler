@@ -147,6 +147,17 @@ IdentifierList * AddIdentifierSemanticAction(char * identifier, IdentifierList *
 	return identifierList;
 }
 
+/**
+ * The optional "abilities: [<id>, ...]" clause of a "unit" declaration is
+ * just its inner "idList" passed through unchanged (NULL when the clause is
+ * absent); this dedicated action exists only so every grammar rule has one,
+ * matching the reference log, not because there's anything to build here.
+ */
+IdentifierList * AbilitiesClauseSemanticAction(IdentifierList * abilities) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	return abilities;
+}
+
 /** ability / on turn / party|encounter / battle. */
 
 AbilityDeclaration * AbilitySemanticAction(char * name, char * targetParameter, IdentifierList * targetTypes, StatementList * body) {
@@ -157,6 +168,17 @@ AbilityDeclaration * AbilitySemanticAction(char * name, char * targetParameter, 
 	abilityDeclaration->targetTypes = targetTypes;
 	abilityDeclaration->body = body;
 	return abilityDeclaration;
+}
+
+/**
+ * The optional ": <targetType>, ..." clause after an ability's target
+ * parameter is just its inner "idList" passed through unchanged (NULL when
+ * the clause is absent); see "AbilitiesClauseSemanticAction" above for why
+ * this pass-through still gets its own named action.
+ */
+IdentifierList * TargetTypeClauseSemanticAction(IdentifierList * targetTypes) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	return targetTypes;
 }
 
 TurnDeclaration * TurnSemanticAction(char * unitName, StatementList * body) {
@@ -207,6 +229,16 @@ StatementList * AddStatementSemanticAction(Statement * statement, StatementList 
 	statementList->statement = statement;
 	statementList->next = next;
 	return statementList;
+}
+
+/**
+ * A "{ <statementList> }" block is just its inner "statementList" passed
+ * through unchanged; see "AbilitiesClauseSemanticAction" above for why this
+ * pass-through still gets its own named action.
+ */
+StatementList * BlockSemanticAction(StatementList * statements) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	return statements;
 }
 
 Statement * DealStatementSemanticAction(Expression * amount, Expression * target) {
@@ -333,6 +365,47 @@ Expression * CallExpressionSemanticAction(char * functionName, ExpressionList * 
 	expression->functionName = functionName;
 	expression->arguments = arguments;
 	expression->type = CALL_EXPRESSION;
+	return expression;
+}
+
+/**
+ * Resolves the choice that "callSuffix" (see "CallSuffixSemanticAction" and
+ * "NoCallSuffixSemanticAction" below) only records: a call when "isCall" is
+ * set, or a plain identifier reference otherwise. Moved here, instead of
+ * being written inline as a ternary in the grammar file, so this rule has
+ * its own semantic-action function like every other one.
+ */
+Expression * IdOrCallExpressionSemanticAction(char * identifier, const CallSuffix callSuffix) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	return callSuffix.isCall
+		? CallExpressionSemanticAction(identifier, callSuffix.arguments)
+		: IdentifierExpressionSemanticAction(identifier);
+}
+
+CallSuffix CallSuffixSemanticAction(ExpressionList * arguments) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	CallSuffix callSuffix;
+	callSuffix.isCall = true;
+	callSuffix.arguments = arguments;
+	return callSuffix;
+}
+
+CallSuffix NoCallSuffixSemanticAction(void) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
+	CallSuffix callSuffix;
+	callSuffix.isCall = false;
+	callSuffix.arguments = NULL;
+	return callSuffix;
+}
+
+/**
+ * A parenthesized "(<expression>)" is just its inner "expression" passed
+ * through unchanged (the parentheses themselves only ever matter to the
+ * parser, for regrouping precedence); see "AbilitiesClauseSemanticAction"
+ * above for why this pass-through still gets its own named action.
+ */
+Expression * ParenthesizedExpressionSemanticAction(Expression * expression) {
+	_logSyntacticAnalyzerAction(__FUNCTION__);
 	return expression;
 }
 

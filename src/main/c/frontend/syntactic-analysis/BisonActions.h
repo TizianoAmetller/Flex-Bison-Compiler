@@ -35,9 +35,11 @@ Position * PositionSemanticAction(Expression * x, Expression * y);
 AttributeList * AddAttributeSemanticAction(Attribute * attribute, AttributeList * next);
 Attribute * AttributeSemanticAction(char * name, Expression * value);
 IdentifierList * AddIdentifierSemanticAction(char * identifier, IdentifierList * next);
+IdentifierList * AbilitiesClauseSemanticAction(IdentifierList * abilities);
 
 /** ability / on turn / party|encounter / battle. */
 AbilityDeclaration * AbilitySemanticAction(char * name, char * targetParameter, IdentifierList * targetTypes, StatementList * body);
+IdentifierList * TargetTypeClauseSemanticAction(IdentifierList * targetTypes);
 TurnDeclaration * TurnSemanticAction(char * unitName, StatementList * body);
 TeamDeclaration * TeamSemanticAction(TeamKind kind, char * name, MemberList * members);
 BattleDeclaration * BattleSemanticAction(IdentifierList * teams);
@@ -46,6 +48,7 @@ Member * MemberSemanticAction(char * unitName, Expression * quantity);
 
 /** Statements. */
 StatementList * AddStatementSemanticAction(Statement * statement, StatementList * next);
+StatementList * BlockSemanticAction(StatementList * statements);
 Statement * DealStatementSemanticAction(Expression * amount, Expression * target);
 Statement * HealStatementSemanticAction(Expression * amount, Expression * target);
 Statement * UseStatementSemanticAction(char * abilityName, Expression * target);
@@ -60,6 +63,10 @@ Expression * BinaryExpressionSemanticAction(Expression * leftExpression, Express
 Expression * UnaryExpressionSemanticAction(Expression * operand, ExpressionType type);
 Expression * MemberExpressionSemanticAction(Expression * object, char * member);
 Expression * CallExpressionSemanticAction(char * functionName, ExpressionList * arguments);
+Expression * IdOrCallExpressionSemanticAction(char * identifier, const CallSuffix callSuffix);
+CallSuffix CallSuffixSemanticAction(ExpressionList * arguments);
+CallSuffix NoCallSuffixSemanticAction(void);
+Expression * ParenthesizedExpressionSemanticAction(Expression * expression);
 Expression * RadiusExpressionSemanticAction(Expression * radius, Expression * center);
 Expression * DiceExpressionSemanticAction(const DiceValue dice);
 Expression * IntegerExpressionSemanticAction(const int value);

@@ -1,0 +1,14 @@
+ability Sweep on target {
+	for (a in allies) {
+		for (b in enemies) {
+			if (a == b) {
+				log "{a} meets itself"
+			} else {
+				deal a.attack - b.defense to b
+			}
+		}
+	}
+	for (a in enemies) {
+		heal 1 to a
+	}
+}

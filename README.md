@@ -27,14 +27,11 @@ This deliverable implements:
 * AST construction for every accepted program
 * accept/reject tests, one language feature per test
 
-The structure of a program (for example: that the units a team lists were declared, that a battle has at least two teams, that positions fit inside the arena) is checked by a first part of the semantic analysis, described in [Semantic analysis](#semantic-analysis).
+The semantic analysis checks the structure of a program (for example: that the units a team lists were declared, that a battle has at least two teams, that positions fit inside the arena) and the bodies of its abilities, effects and `on turn` declarations. It is described in [Semantic analysis](#semantic-analysis).
 
 It does **not** implement yet, and the next milestone adds:
 
-* the analysis of the bodies of abilities, effects and `on turn` declarations
 * the simulation itself, and any visual output of a battle
-
-Because the bodies are not analyzed yet, some semantically invalid programs are still accepted (for example, an ability that uses an effect that doesn't exist).
 
 ## Language Overview
 
@@ -114,7 +111,7 @@ What is still open for Stage III: variables and assignment, and ability costs an
 
 ## Semantic analysis
 
-Once a program is accepted by the syntactic analysis, the compiler checks its structure (this is skipped with `--syntax-only`). The declarations can come in any order. Every error found is reported, not just the first one, as `line N: <message>` on the standard error, quoting the offending name between single quotes, and a program with any error is rejected with exit status `1`. It stops reporting after 100 errors.
+Once a program is accepted by the syntactic analysis, the compiler checks it (this is skipped with `--syntax-only`). The declarations can come in any order. Every error found is reported, not just the first one, as `line N: <message>` on the standard error, quoting the offending name between single quotes, and a program with any error is rejected with exit status `1`. It stops reporting after 100 errors.
 
 What it validates:
 
@@ -122,19 +119,52 @@ What it validates:
 * **Units.** Exactly the attributes `health`, `attack`, `defense` and `speed`, each once, with a constant `int` value. Every ability in `abilities:` exists, and neither an ability nor a tag is listed twice.
 * **Abilities.** Each type of target (after `on x:`) is `ally`, `enemy`, `self` or a tag that some unit declares, with no repeats.
 * **`on turn`.** The unit exists, and has at most one.
-* **Teams.** Every member is a declared unit, and a unit is not repeated within a team. A constant quantity must be greater than 0.
+* **Teams.** Every member is a declared unit, and a team can have several members of the same unit (for example, two groups of archers around different points). A constant quantity must be greater than 0.
 * **Battle.** At most one, with at least two teams that exist and are not repeated. A unit declaration can be in only one of its teams, so a mirror match needs a copy of the unit (`unit EnemyArcher { ... }`).
 * **Arena.** At most one, with a constant width and height greater than 0 and no dice.
 * **Positions** (of units and of team members) are constant, and inside the arena when there is one (`0 <= x < width` and `0 <= y < height`).
 
 A constant expression is made of `int` literals, dice and `+ - * /`, computed with 64 bits, and an overflow or a division by zero is an error. Anything else in those places is rejected. Dice are accepted, but they have no value to check yet, so a quantity or a position with dice is not range-checked.
 
-A program with no `battle` is valid: it exits with `0` and warns "no battle declared: nothing to simulate". The bodies of abilities, effects and `on turn` declarations are not analyzed yet.
+A program with no `battle` is valid: it exits with `0` and warns "no battle declared: nothing to simulate".
+
+### Bodies
+
+The bodies of abilities, effects and `on turn` declarations are checked too. A name must be visible where it is used:
+
+| Body              | Names it sees |
+| :---------------- | :------------ |
+| `ability A on p`  | `self` (the unit that uses it), `p` (its target), and `allies` and `enemies` (units) |
+| `effect E on p`   | `p` (the unit that carries it), and `allies` and `enemies` (units, seen from `p`). There is no `self`. |
+| `on turn U`       | `self` (the unit), and `allies` and `enemies` |
+
+A `for (x in c)` adds `x`, a unit, inside its block. The blocks of `if`, `else` and `while` open no scope. The target parameter and the iterator can't be reserved names, and an iterator can't take a name that is already visible.
+
+An expression has one of five types: `int` (a dice roll is an `int` that is rolled every time it is evaluated), `bool`, `string`, `unit` and `units`. `unit.health` (and `attack`, `defense` and `speed`) is an `int`. The only functions are `nearest(ally)` and `nearest(enemy)`, which give a unit, and `all(units)`, which gives units. `radius r of c` needs an `int` and a unit, and gives units. `ally` and `enemy` can only be the argument of `nearest`.
+
+* `+ - * /` take two `int`s and give an `int`. A divisor that is the constant 0 is an error, and integer division truncates toward zero.
+* `< > <= >=` take two `int`s and give a `bool`.
+* `==` and `!=` compare two values of the same type, which can be `int`, `bool`, `string` or `unit` (but not `units`), and give a `bool`.
+* `and`, `or` and `not` take `bool`s and give a `bool`.
+
+An expression with an error is reported once: it has no type, so the expressions around it say nothing more about it.
+
+The statements need:
+
+* `deal` and `heal`: an `int` amount, and a unit or units as the target.
+* `use A on t`: a declared ability, and a unit `t`. In an `on turn U`, `A` must also be one of the `abilities` of `U`.
+* `apply E to t for n`: a declared effect, a unit or units, and an `int`.
+* `move toward t` and `move away from t`: a unit.
+* `if` and `while`: a `bool`. `for`: units.
+
+The message of a `log` can have placeholders, written `{name}` or `{name.attribute}`: `name` is written like an identifier and `attribute` is one of `health`, `attack`, `defense` and `speed`. The name must be visible and can't be units, and with an attribute it must be a unit. There is no way to write a literal brace: every `{` opens a placeholder and every `}` closes one, so an unclosed `{`, an unmatched `}`, an empty `{}` and anything else between braces are errors.
+
+### Tests
 
 The tests have two categories of their own under `src/test/c`, and both run the whole compiler:
 
 * `semantic-accept`: valid programs, which must be accepted with exit status `0` and no error. A `NN-name.stderr` file next to a program lists messages that must also be reported (for example, the "no battle" warning).
-* `semantic-reject`: programs with a single mistake each (except `29-several-errors`), which must be rejected with exit status `1`. The `NN-name.stderr` file lists every message, and it is exhaustive: each line must be in the standard error, and the analyzer can report no other.
+* `semantic-reject`: programs with a single mistake each (except `29-several-errors` and `74-several-body-errors`), which must be rejected with exit status `1`. The `NN-name.stderr` file lists every message, and it is exhaustive: each line must be in the standard error, and the analyzer can report no other.
 
 ## Requirements
 

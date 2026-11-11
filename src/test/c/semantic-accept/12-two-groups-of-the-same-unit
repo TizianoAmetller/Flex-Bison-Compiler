@@ -1,0 +1,9 @@
+arena (40, 20)
+
+unit Archer { health: 10, attack: 3, defense: 1, speed: 5 }
+unit Goblin { health: 40, attack: 8, defense: 2, speed: 6 }
+
+party Blue = [Archer * 10 around (5, 5), Archer * 10 around (5, 15)]
+encounter Red = [Goblin * 5 around (35, 10)]
+
+battle: [Blue, Red]

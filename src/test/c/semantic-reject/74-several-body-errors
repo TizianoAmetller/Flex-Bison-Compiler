@@ -1,0 +1,13 @@
+ability Slash on target {
+	deal power to target
+}
+
+effect Poison on victim {
+	heal true to victim
+}
+
+unit Hero { health: 100, attack: 15, defense: 5, speed: 10 }
+
+on turn Hero {
+	move toward 5
+}

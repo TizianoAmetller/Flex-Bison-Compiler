@@ -1,0 +1,20 @@
+unit Hero { health: 100, attack: 15, defense: 5, speed: 10 }
+unit Goblin { health: 40, attack: 8, defense: 2, speed: 6 }
+
+effect Panic on victim {
+	move away from nearest(enemy)
+	deal 1 to enemies
+	heal 1 to allies
+	if (victim.health < 10) {
+		log "{victim} panics, {victim.health} left"
+	}
+}
+
+ability Scare on target: enemy {
+	apply Panic to target for 2
+}
+
+party Heroes = [Hero]
+encounter Goblins = [Goblin]
+
+battle: [Heroes, Goblins]

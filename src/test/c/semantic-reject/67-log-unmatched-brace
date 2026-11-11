@@ -1,0 +1,3 @@
+ability Slash on target {
+	log "hit target}"
+}

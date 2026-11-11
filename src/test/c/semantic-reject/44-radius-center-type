@@ -1,0 +1,5 @@
+ability Slash on target {
+	for (victim in radius 5 of allies) {
+		deal 1 to victim
+	}
+}

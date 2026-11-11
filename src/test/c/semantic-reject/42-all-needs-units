@@ -1,0 +1,5 @@
+ability Slash on target {
+	for (member in all(target)) {
+		deal 1 to member
+	}
+}

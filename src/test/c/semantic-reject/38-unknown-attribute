@@ -1,0 +1,3 @@
+ability Slash on target {
+	deal target.mana to target
+}

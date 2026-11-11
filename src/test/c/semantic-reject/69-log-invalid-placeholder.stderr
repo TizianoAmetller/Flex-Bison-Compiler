@@ -1,0 +1,1 @@
+line 2: invalid placeholder '{a b}' in log message: use {name} or {name.attribute}

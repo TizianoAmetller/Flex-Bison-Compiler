@@ -1,0 +1,3 @@
+effect Poison on victim {
+	deal self.attack to victim
+}

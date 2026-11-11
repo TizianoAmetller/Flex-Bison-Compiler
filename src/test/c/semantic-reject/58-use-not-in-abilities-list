@@ -1,0 +1,9 @@
+unit Hero { health: 100, attack: 15, defense: 5, speed: 10 }
+
+ability Slash on target {
+	deal 1 to target
+}
+
+on turn Hero {
+	use Slash on nearest(enemy)
+}

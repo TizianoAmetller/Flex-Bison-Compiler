@@ -11,6 +11,7 @@ unit Goblin at (5, 2) {
 	attack: 8,
 	defense: 2,
 	speed: 6
+	abilities: [Slash]
 }
 
 ability Slash on target: enemy {

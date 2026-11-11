@@ -1,0 +1,3 @@
+line 2: 'power' is not defined
+line 6: 'heal' needs an int amount, got bool
+line 12: 'move' needs a unit as its target, got int

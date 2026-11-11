@@ -1,0 +1,5 @@
+ability Slash on target {
+	if (1) {
+		deal 1 to target
+	}
+}

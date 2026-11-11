@@ -1,0 +1,51 @@
+unit Hero {
+	health: 100, attack: 15, defense: 5, speed: 10,
+	abilities: [Slash, Fireball, Rally]
+}
+unit Goblin { health: 40, attack: 8, defense: 2, speed: 6 }
+
+ability Slash on target: enemy {
+	deal self.attack - target.defense to target
+	apply Poison to target for 1d4
+	log "Hero slashes {target} for {self.attack}"
+}
+
+ability Fireball on target: enemy {
+	for (member in radius 5 of target) {
+		deal 2d6 to member
+		log "{member} burns, {member.health} left"
+	}
+}
+
+ability Rally on target: ally {
+	for (friend in all(allies)) {
+		heal 1 to friend
+	}
+	heal 2 to allies
+	deal 1 to enemies
+}
+
+effect Poison on victim {
+	deal 2 to victim
+}
+
+on turn Hero {
+	if (nearest(enemy).health < 20 and not (self.health < 10)) {
+		move away from nearest(enemy)
+	} else {
+		move toward nearest(enemy)
+		use Slash on nearest(enemy)
+	}
+	while (self.health < self.attack) {
+		heal 1 to self
+	}
+	for (friend in allies) {
+		use Rally on friend
+	}
+	use Fireball on nearest(ally)
+}
+
+party Heroes = [Hero]
+encounter Goblins = [Goblin]
+
+battle: [Heroes, Goblins]

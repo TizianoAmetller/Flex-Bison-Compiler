@@ -1,0 +1,7 @@
+ability Sweep on target {
+	for (a in allies) {
+		for (a in enemies) {
+			deal 1 to a
+		}
+	}
+}

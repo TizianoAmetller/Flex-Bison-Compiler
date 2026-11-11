@@ -1,0 +1,5 @@
+ability Slash on target {
+	if (allies == enemies) {
+		deal 1 to target
+	}
+}

@@ -1,0 +1,7 @@
+effect Poison on victim {
+	deal 2 to victim
+}
+
+ability Slash on target {
+	apply Poison to 5 for 3
+}

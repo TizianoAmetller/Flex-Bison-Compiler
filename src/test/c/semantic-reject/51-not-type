@@ -1,0 +1,5 @@
+ability Slash on target {
+	if (not 5) {
+		deal 1 to target
+	}
+}

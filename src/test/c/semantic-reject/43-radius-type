@@ -1,0 +1,5 @@
+ability Slash on target {
+	for (victim in radius true of target) {
+		deal 1 to victim
+	}
+}

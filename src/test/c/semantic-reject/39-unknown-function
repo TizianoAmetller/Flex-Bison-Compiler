@@ -1,0 +1,3 @@
+ability Slash on target {
+	deal strongest(target) to target
+}

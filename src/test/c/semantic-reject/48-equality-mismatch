@@ -1,0 +1,5 @@
+ability Slash on target {
+	if (target.health == true) {
+		deal 1 to target
+	}
+}

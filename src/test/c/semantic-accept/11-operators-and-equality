@@ -1,0 +1,15 @@
+ability Probe on target {
+	if (target == self or target != nearest(enemy)) {
+		log "units can be compared"
+	}
+	if (target.health == 10 and "a" != "b") {
+		log "and so can ints and strings"
+	}
+	if (true == (1 < 2)) {
+		log "and bools"
+	}
+	if (not (target.health >= 1 and target.defense <= 3 or target.speed > 4)) {
+		deal 1 + 2 * 3 - 4 / 2 to target
+	}
+	deal (target.health + 1d6) * 2 to target
+}

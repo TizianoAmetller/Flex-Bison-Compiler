@@ -11,11 +11,11 @@
 ModuleDestructor initializeSemanticAnalyzerModule(void);
 
 /**
- * Validates the structure of the program in the AST: its declarations, the
- * references between them, the battle and the arena, the attributes of the
- * units, and the constant expressions (attributes, positions, quantities and
- * the arena). The bodies of the abilities, effects and "on turn" declarations
- * are not analyzed yet.
+ * Validates the program in the AST: its declarations, the references between
+ * them, the battle and the arena, the attributes of the units, the constant
+ * expressions (attributes, positions, quantities and the arena), and the bodies
+ * of the abilities, effects and "on turn" declarations (the names they use, the
+ * types of their expressions and statements, and the messages of their logs).
  *
  * It leaves the model it builds in "compilerState->semanticModel", which the
  * caller must destroy (before the AST, whose nodes the model points to), and

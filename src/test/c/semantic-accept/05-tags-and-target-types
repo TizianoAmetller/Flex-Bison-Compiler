@@ -1,0 +1,19 @@
+unit Skeleton: undead, beast { health: 30, attack: 6, defense: 2, speed: 4 }
+unit Hero { health: 100, attack: 15, defense: 5, speed: 10, abilities: [Smite, Heal] }
+
+ability Smite on target: enemy, undead {
+	deal 10 to target
+}
+
+ability Heal on target: ally, self {
+	heal 2d6 to target
+}
+
+ability Howl on target: beast {
+	deal 1 to target
+}
+
+party Heroes = [Hero]
+encounter Undead = [Skeleton]
+
+battle: [Heroes, Undead]

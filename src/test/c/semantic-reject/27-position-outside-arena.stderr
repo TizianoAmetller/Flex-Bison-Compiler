@@ -1,0 +1,1 @@
+line 3: position of unit 'Hero' is outside the arena: x is 45, but it must satisfy 0 <= x < 40

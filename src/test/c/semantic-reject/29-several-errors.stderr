@@ -1,0 +1,3 @@
+line 2: unit 'Hero' is already declared (first declared at line 1)
+line 4: unit 'Archer' is missing attribute 'speed'
+line 6: team 'Blue' references undeclared unit 'Ghost'

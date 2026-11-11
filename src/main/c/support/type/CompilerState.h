@@ -19,7 +19,11 @@ typedef struct {
 	 */
 	bool syntaxOnly;
 
-	// Stage III adds the semantic model here.
+	/**
+	 * What the semantic analysis learns about the program. It holds pointers
+	 * into the AST, so it must be destroyed before it. NULL until then.
+	 */
+	struct SemanticModel * semanticModel;
 } CompilerState;
 
 #endif

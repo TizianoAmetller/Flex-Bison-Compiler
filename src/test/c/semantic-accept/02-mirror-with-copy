@@ -1,0 +1,7 @@
+unit Archer { health: 10, attack: 3, defense: 1, speed: 5 }
+unit EnemyArcher { health: 10, attack: 3, defense: 1, speed: 5 }
+
+party Blue = [Archer * 5]
+encounter Red = [EnemyArcher * 5]
+
+battle: [Blue, Red]

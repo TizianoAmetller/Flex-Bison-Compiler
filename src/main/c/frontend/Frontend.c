@@ -35,6 +35,8 @@ static const char * _compilationStatusAsString(const CompilationStatus compilati
 			return "FAILED";
 		case IN_PROGRESS:
 			return "IN_PROGRESS";
+		case INVALID_USAGE:
+			return "INVALID_USAGE";
 		case OUT_OF_MEMORY:
 			return "OUT_OF_MEMORY";
 		case SUCCEEDED:

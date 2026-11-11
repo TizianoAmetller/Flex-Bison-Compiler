@@ -44,6 +44,8 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 		# AST types that no longer exist in this grammar. Stage III will add
 		# the RPG simulator's own backend from scratch.
 		src/main/c/EntryPoint.c
+		src/main/c/backend/semantic-analysis/SemanticAnalyzer.c
+		src/main/c/backend/semantic-analysis/SemanticModel.c
 		src/main/c/frontend/Frontend.c
 		src/main/c/frontend/lexical-analysis/FlexActions.c
 		src/main/c/frontend/lexical-analysis/FlexScanner.c

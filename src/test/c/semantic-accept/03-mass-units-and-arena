@@ -1,0 +1,10 @@
+arena (40, 20)
+
+unit Hero at (0, 10) { health: 100, attack: 15, defense: 5, speed: 10 }
+unit Archer { health: 10, attack: 3, defense: 1, speed: 5 }
+unit Goblin { health: 40, attack: 8, defense: 2, speed: 6 }
+
+party Heroes = [Hero, Archer * 20 around (5, 10)]
+encounter Goblins = [Goblin * 2d6 around (35, 10)]
+
+battle: [Heroes, Goblins]

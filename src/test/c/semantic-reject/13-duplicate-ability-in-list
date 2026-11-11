@@ -1,0 +1,5 @@
+ability Slash on target {
+	deal 10 to target
+}
+
+unit Hero { health: 100, attack: 15, defense: 5, speed: 10, abilities: [Slash, Slash] }

@@ -1,0 +1,7 @@
+ability Slash on target {
+	deal 10 to target
+}
+
+ability Slash on target {
+	deal 20 to target
+}

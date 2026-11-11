@@ -8,6 +8,7 @@ A compiler for a custom DSL that simulates turn-based RPG combat (units, abiliti
 
 * [Stage 2 Scope](#stage-2-scope)
 * [Language Overview](#language-overview)
+* [Semantic analysis](#semantic-analysis)
 * [Requirements](#requirements)
 * [Configuration](#configuration)
 * [Commands](#commands)
@@ -26,12 +27,14 @@ This deliverable implements:
 * AST construction for every accepted program
 * accept/reject tests, one language feature per test
 
-It does **not** implement yet:
+The structure of a program (for example: that the units a team lists were declared, that a battle has at least two teams, that positions fit inside the arena) is checked by a first part of the semantic analysis, described in [Semantic analysis](#semantic-analysis).
 
-* semantic analysis (for example: that the units a team lists were declared, that a battle has at least two teams, that positions fit inside the arena)
+It does **not** implement yet, and the next milestone adds:
+
+* the analysis of the bodies of abilities, effects and `on turn` declarations
 * the simulation itself, and any visual output of a battle
 
-Because there is no semantic analysis yet, some semantically invalid programs are still accepted (for example, a team that lists an undeclared unit).
+Because the bodies are not analyzed yet, some semantically invalid programs are still accepted (for example, an ability that uses an effect that doesn't exist).
 
 ## Language Overview
 
@@ -109,6 +112,30 @@ The biggest addition is space. Units can have positions, an `arena` sets the siz
 
 What is still open for Stage III: variables and assignment, and ability costs and cooldowns.
 
+## Semantic analysis
+
+Once a program is accepted by the syntactic analysis, the compiler checks its structure (this is skipped with `--syntax-only`). The declarations can come in any order. Every error found is reported, not just the first one, as `line N: <message>` on the standard error, quoting the offending name between single quotes, and a program with any error is rejected with exit status `1`. It stops reporting after 100 errors.
+
+What it validates:
+
+* **Names.** Units, abilities, effects and teams can't repeat a name within their kind. A unit, ability, effect, team or tag can't be named after a reserved word: `self`, `allies`, `enemies`, `ally`, `enemy`, `nearest` or `all`.
+* **Units.** Exactly the attributes `health`, `attack`, `defense` and `speed`, each once, with a constant `int` value. Every ability in `abilities:` exists, and neither an ability nor a tag is listed twice.
+* **Abilities.** Each type of target (after `on x:`) is `ally`, `enemy`, `self` or a tag that some unit declares, with no repeats.
+* **`on turn`.** The unit exists, and has at most one.
+* **Teams.** Every member is a declared unit, and a unit is not repeated within a team. A constant quantity must be greater than 0.
+* **Battle.** At most one, with at least two teams that exist and are not repeated. A unit declaration can be in only one of its teams, so a mirror match needs a copy of the unit (`unit EnemyArcher { ... }`).
+* **Arena.** At most one, with a constant width and height greater than 0 and no dice.
+* **Positions** (of units and of team members) are constant, and inside the arena when there is one (`0 <= x < width` and `0 <= y < height`).
+
+A constant expression is made of `int` literals, dice and `+ - * /`, computed with 64 bits, and an overflow or a division by zero is an error. Anything else in those places is rejected. Dice are accepted, but they have no value to check yet, so a quantity or a position with dice is not range-checked.
+
+A program with no `battle` is valid: it exits with `0` and warns "no battle declared: nothing to simulate". The bodies of abilities, effects and `on turn` declarations are not analyzed yet.
+
+The tests have two categories of their own under `src/test/c`, and both run the whole compiler:
+
+* `semantic-accept`: valid programs, which must be accepted with exit status `0` and no error. A `NN-name.stderr` file next to a program lists messages that must also be reported (for example, the "no battle" warning).
+* `semantic-reject`: programs with a single mistake each (except `29-several-errors`), which must be rejected with exit status `1`. The `NN-name.stderr` file lists every message, and it is exhaustive: each line must be in the standard error, and the analyzer can report no other.
+
 ## Requirements
 
 * [Docker v28.3.2](https://www.docker.com/)
@@ -172,14 +199,15 @@ docker compose down
 
 ## Tests
 
-The tests under `src/test/c` only check syntax:
+The tests under `src/test/c` have four categories:
 
-* `src/test/c/accept`: valid programs, which must be accepted.
-* `src/test/c/reject`: invalid programs, which must be rejected.
+* `src/test/c/accept`: valid programs, which must be accepted by the syntactic analysis.
+* `src/test/c/reject`: invalid programs, which must be rejected by it.
+* `src/test/c/semantic-accept` and `src/test/c/semantic-reject`: the same for the semantic analysis (see [Semantic analysis](#semantic-analysis)).
 
 Each test is as small as possible and covers a single feature, and a few of the rejections pin down restrictions that are intentional (for example, `around` only goes with a quantity, and `at` only without one). A few larger programs show the features working together.
 
-`test.sh` runs every program with `--syntax-only` and requires the exact exit status: `0` for `accept` and `1` for `reject`. The build links AddressSanitizer and UndefinedBehaviorSanitizer, and a test also fails when its standard error holds a sanitizer report, so a crash can't pass as a rejection.
+`test.sh` runs the `accept` and `reject` programs with `--syntax-only`, and the semantic ones without it. It requires the exact exit status: `0` for the `accept` categories and `1` for the `reject` ones. It runs the compiler at the `WARNING` logging level, so that the standard error is the same everywhere. The build links AddressSanitizer and UndefinedBehaviorSanitizer, and a test also fails when its standard error holds a sanitizer report, so a crash can't pass as a rejection.
 
 ## Documentation
 

@@ -1,0 +1,1 @@
+line 1: expected int, got bool (in attribute 'health' of unit 'Hero')

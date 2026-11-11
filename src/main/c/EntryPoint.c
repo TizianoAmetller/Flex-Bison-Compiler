@@ -1,3 +1,5 @@
+#include "backend/semantic-analysis/SemanticAnalyzer.h"
+#include "backend/semantic-analysis/SemanticModel.h"
 #include "frontend/Frontend.h"
 #include "frontend/lexical-analysis/FlexActions.h"
 #include "frontend/syntactic-analysis/BisonActions.h"
@@ -52,7 +54,8 @@ int main(const int length, const char ** arguments) {
 	}
 	CompilerState compilerState = {
 		.abstractSyntaxTree = NULL,
-		.syntaxOnly = false
+		.syntaxOnly = false,
+		.semanticModel = NULL
 	};
 	if (!_parseArguments(length, arguments, &compilerState, logger)) {
 		destroyLogger(logger);
@@ -63,19 +66,26 @@ int main(const int length, const char ** arguments) {
 		initializeAbstractSyntaxTreeModule(),
 		initializeFlexActionsModule(lexicalAnalyzer),
 		initializeBisonActionsModule(&compilerState),
-		initializeFrontendModule(lexicalAnalyzer)
+		initializeFrontendModule(lexicalAnalyzer),
+		initializeSemanticAnalyzerModule()
 	};
 	CompilationStatus compilationStatus = executeSyntacticAnalysis();
 	Program * program = compilerState.abstractSyntaxTree;
 	if (compilationStatus == SUCCEEDED) {
 		logDebugging(logger, "The syntactic-analysis phase accepts the input program.");
-		// The semantic-analysis phase goes here, and it is skipped when compilerState.syntaxOnly is set.
+		if (!compilerState.syntaxOnly) {
+			compilationStatus = executeSemanticAnalysis(&compilerState);
+			if (compilationStatus != SUCCEEDED) {
+				logError(logger, "Semantic analysis rejected the input program.");
+			}
+		}
 	}
 	else {
 		logError(logger, "The syntactic-analysis phase rejects the input program.");
 		compilationStatus = FAILED;
 	}
-	logDebugging(logger, "Releasing AST resources...");
+	logDebugging(logger, "Releasing the semantic model and AST resources...");
+	destroySemanticModel(compilerState.semanticModel);
 	destroyProgram(program);
 	for (int k = (sizeof(moduleDestructors)/sizeof(ModuleDestructor)) - 1; 0 <= k; --k) {
 		moduleDestructors[k]();

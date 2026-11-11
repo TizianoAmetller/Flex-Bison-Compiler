@@ -1,0 +1,27 @@
+Seed: 1
+Arena: unbounded
+Team Heroes: 1 unit
+Team Goblins: 1 unit
+
+Round 1
+Hero uses Tap on Goblin
+  Goblin takes 0 damage (health 10/10)
+Goblin uses Tap on Hero
+  Hero takes 0 damage (health 10/10)
+
+Round 2
+Hero uses Tap on Goblin
+  Goblin takes 0 damage (health 10/10)
+Goblin uses Tap on Hero
+  Hero takes 0 damage (health 10/10)
+
+Round 3
+Hero uses Tap on Goblin
+  Goblin takes 0 damage (health 10/10)
+Goblin uses Tap on Hero
+  Hero takes 0 damage (health 10/10)
+
+Battle over after 3 rounds.
+Draw: round limit (3) reached
+Team Heroes: 1 alive, 0 dead
+Team Goblins: 1 alive, 0 dead

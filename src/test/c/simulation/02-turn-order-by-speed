@@ -1,0 +1,25 @@
+unit Slow { health: 10, attack: 1, defense: 0, speed: 1 }
+unit MidA { health: 10, attack: 1, defense: 0, speed: 5 }
+unit Fast { health: 10, attack: 1, defense: 0, speed: 9 }
+unit MidB { health: 10, attack: 1, defense: 0, speed: 5 }
+
+on turn Slow {
+	log "{self} acts"
+}
+
+on turn MidA {
+	log "{self} acts"
+}
+
+on turn Fast {
+	log "{self} acts"
+}
+
+on turn MidB {
+	log "{self} acts"
+}
+
+party Blue = [Slow, MidA]
+encounter Red = [Fast, MidB]
+
+battle: [Blue, Red]

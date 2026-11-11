@@ -1,0 +1,47 @@
+arena (40, 20)
+
+unit Hero at (0, 10) {
+	health: 100,
+	attack: 15,
+	defense: 5,
+	speed: 10,
+	abilities: [Slash, Fireball]
+}
+
+unit Archer {
+	health: 10, attack: 3, defense: 1, speed: 5
+}
+
+unit Goblin {
+	health: 12, attack: 5, defense: 1, speed: 4
+}
+
+ability Slash on target: enemy {
+	deal self.attack - target.defense to target
+	log "Hero slashes {target} for {self.attack}"
+	apply Poison to target for 3
+}
+
+ability Fireball on target: enemy {
+	for (victim in radius 5 of target) {
+		deal 2d6 to victim
+	}
+}
+
+effect Poison on victim {
+	deal 2 to victim
+}
+
+on turn Hero {
+	if (self.health < 30) {
+		move away from nearest(enemy)
+	} else {
+		move toward nearest(enemy)
+		use Slash on nearest(enemy)
+	}
+}
+
+party Heroes = [Hero, Archer * 20 around (5, 10)]
+encounter Goblins = [Goblin * 2d6 around (35, 10)]
+
+battle: [Heroes, Goblins]

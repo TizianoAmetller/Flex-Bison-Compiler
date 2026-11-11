@@ -1,0 +1,23 @@
+unit Hero { health: 40, attack: 1, defense: 0, speed: 6, abilities: [Strike] }
+unit Goblin { health: 30, attack: 1, defense: 0, speed: 4, abilities: [Stab] }
+
+ability Strike on target: enemy {
+	deal 2d6 to target
+}
+
+ability Stab on target: enemy {
+	deal 1d6 + 1 to target
+}
+
+on turn Hero {
+	use Strike on nearest(enemy)
+}
+
+on turn Goblin {
+	use Stab on nearest(enemy)
+}
+
+party Heroes = [Hero]
+encounter Goblins = [Goblin]
+
+battle: [Heroes, Goblins]

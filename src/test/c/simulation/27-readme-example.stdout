@@ -1,0 +1,65 @@
+Seed: 1
+Arena: 40x20
+Team Heroes: 21 units
+Team Goblins: 7 units
+
+Round 1
+Hero moves toward Goblin#1: (0, 10) -> (10, 10)
+Hero uses Slash on Goblin#1
+  Goblin#1 takes 14 damage (health 0/12)
+  Goblin#1 dies
+  > Hero slashes Goblin#1 for 15
+  Hero skips a statement: target is dead
+
+Round 2
+Hero moves toward Goblin#5: (10, 10) -> (20, 9)
+Hero uses Slash on Goblin#5
+  Goblin#5 takes 14 damage (health 0/12)
+  Goblin#5 dies
+  > Hero slashes Goblin#5 for 15
+  Hero skips a statement: target is dead
+
+Round 3
+Hero moves toward Goblin#7: (20, 9) -> (30, 12)
+Hero uses Slash on Goblin#7
+  Goblin#7 takes 14 damage (health 0/12)
+  Goblin#7 dies
+  > Hero slashes Goblin#7 for 15
+  Hero skips a statement: target is dead
+
+Round 4
+Hero moves toward Goblin#2: (30, 12) -> (36, 8)
+Hero uses Slash on Goblin#2
+  Goblin#2 takes 14 damage (health 0/12)
+  Goblin#2 dies
+  > Hero slashes Goblin#2 for 15
+  Hero skips a statement: target is dead
+
+Round 5
+Hero stays at (36, 8)
+Hero uses Slash on Goblin#3
+  Goblin#3 takes 14 damage (health 0/12)
+  Goblin#3 dies
+  > Hero slashes Goblin#3 for 15
+  Hero skips a statement: target is dead
+
+Round 6
+Hero moves toward Goblin#4: (36, 8) -> (37, 9)
+Hero uses Slash on Goblin#4
+  Goblin#4 takes 14 damage (health 0/12)
+  Goblin#4 dies
+  > Hero slashes Goblin#4 for 15
+  Hero skips a statement: target is dead
+
+Round 7
+Hero moves toward Goblin#6: (37, 9) -> (38, 12)
+Hero uses Slash on Goblin#6
+  Goblin#6 takes 14 damage (health 0/12)
+  Goblin#6 dies
+  > Hero slashes Goblin#6 for 15
+  Hero skips a statement: target is dead
+
+Battle over after 7 rounds.
+Winner: Heroes
+Team Heroes: 21 alive, 0 dead
+Team Goblins: 0 alive, 7 dead

@@ -1,0 +1,13 @@
+Seed: 1
+Arena: unbounded
+Team Heroes: 1 unit
+Team Goblins: 1 unit
+
+Round 1
+Hero uses Strike on Goblin
+  Hero cannot use Slash on Goblin: not in its abilities
+
+Battle over after 1 round.
+Draw: round limit (1) reached
+Team Heroes: 1 alive, 0 dead
+Team Goblins: 1 alive, 0 dead

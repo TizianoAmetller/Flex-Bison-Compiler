@@ -1,0 +1,14 @@
+Seed: 1
+Arena: unbounded
+Team Heroes: 1 unit
+Team Goblins: 1 unit
+
+Round 1
+Hero skips a statement: no unit found
+Hero skips a statement: no unit found
+> after
+
+Battle over after 1 round.
+Draw: round limit (1) reached
+Team Heroes: 1 alive, 0 dead
+Team Goblins: 1 alive, 0 dead

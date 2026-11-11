@@ -1,0 +1,27 @@
+Seed: 1
+Arena: unbounded
+Team A: 1 unit
+Team B: 1 unit
+Team C: 1 unit
+
+Round 1
+Alpha uses Hit on Beta
+  Beta takes 10 damage (health 10/20)
+Beta uses Hit on Alpha
+  Alpha takes 10 damage (health 10/20)
+Gamma uses Hit on Alpha
+  Alpha takes 10 damage (health 0/20)
+  Alpha dies
+
+Round 2
+Beta uses Hit on Gamma
+  Gamma takes 10 damage (health 10/20)
+Gamma uses Hit on Beta
+  Beta takes 10 damage (health 0/20)
+  Beta dies
+
+Battle over after 2 rounds.
+Winner: C
+Team A: 0 alive, 1 dead
+Team B: 0 alive, 1 dead
+Team C: 1 alive, 0 dead

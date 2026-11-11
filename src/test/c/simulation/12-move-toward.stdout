@@ -1,0 +1,21 @@
+Seed: 1
+Arena: unbounded
+Team Heroes: 1 unit
+Team Goblins: 1 unit
+
+Round 1
+Hero moves toward Goblin: (0, 10) -> (4, 6)
+
+Round 2
+Hero moves toward Goblin: (4, 6) -> (8, 6)
+
+Round 3
+Hero moves toward Goblin: (8, 6) -> (9, 6)
+
+Round 4
+Hero stays at (9, 6)
+
+Battle over after 4 rounds.
+Draw: round limit (4) reached
+Team Heroes: 1 alive, 0 dead
+Team Goblins: 1 alive, 0 dead

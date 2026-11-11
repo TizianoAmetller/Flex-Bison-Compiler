@@ -1,0 +1,15 @@
+unit Hero { health: 10, attack: 1, defense: 0, speed: 5, abilities: [Loop] }
+unit Goblin { health: 10, attack: 1, defense: 0, speed: 1 }
+
+ability Loop on target: enemy {
+	use Loop on target
+}
+
+on turn Hero {
+	use Loop on nearest(enemy)
+}
+
+party Heroes = [Hero]
+encounter Goblins = [Goblin]
+
+battle: [Heroes, Goblins]

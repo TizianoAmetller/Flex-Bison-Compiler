@@ -1,0 +1,16 @@
+Seed: 1
+Arena: unbounded
+Team Heroes: 1 unit
+Team Goblins: 1 unit
+
+Round 1
+Hero uses Hex on Goblin
+  Goblin is affected by Poison for 3 turns
+Poison acts on Goblin
+  Goblin takes 5 damage (health 0/3)
+  Goblin dies
+
+Battle over after 1 round.
+Winner: Heroes
+Team Heroes: 1 alive, 0 dead
+Team Goblins: 0 alive, 1 dead

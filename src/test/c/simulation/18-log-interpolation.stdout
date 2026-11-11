@@ -1,0 +1,14 @@
+Seed: 1
+Arena: unbounded
+Team Heroes: 1 unit
+Team Goblins: 1 unit
+
+Round 1
+Hero uses Slash on Goblin
+  Goblin takes 3 damage (health 9/12)
+  > Hero (attack 5, speed 6) hits Goblin (defense 2, health 9)
+
+Battle over after 1 round.
+Draw: round limit (1) reached
+Team Heroes: 1 alive, 0 dead
+Team Goblins: 1 alive, 0 dead

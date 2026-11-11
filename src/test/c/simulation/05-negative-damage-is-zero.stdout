@@ -1,0 +1,13 @@
+Seed: 1
+Arena: unbounded
+Team Heroes: 1 unit
+Team Walls: 1 unit
+
+Round 1
+Wall takes 0 damage (health 10/10)
+Wall takes 0 damage (health 10/10)
+
+Battle over after 1 round.
+Draw: round limit (1) reached
+Team Heroes: 1 alive, 0 dead
+Team Walls: 1 alive, 0 dead

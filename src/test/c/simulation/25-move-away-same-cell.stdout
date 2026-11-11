@@ -1,0 +1,19 @@
+Seed: 1
+Arena: 50x50
+Team Heroes: 1 unit
+Team Goblins: 1 unit
+
+Round 1
+Hero uses Retreat on Goblin
+  Hero moves away from Goblin: (20, 20) -> (23, 20)
+  > Hero moved away from Goblin
+
+Round 2
+Hero uses Retreat on Goblin
+  Hero moves away from Goblin: (23, 20) -> (26, 20)
+  > Hero moved away from Goblin
+
+Battle over after 2 rounds.
+Draw: round limit (2) reached
+Team Heroes: 1 alive, 0 dead
+Team Goblins: 1 alive, 0 dead

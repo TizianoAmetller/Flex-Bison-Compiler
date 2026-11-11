@@ -1,0 +1,20 @@
+unit Hero { health: 20, attack: 1, defense: 0, speed: 9 }
+unit Cleric { health: 20, attack: 1, defense: 0, speed: 1 }
+unit Squire { health: 20, attack: 1, defense: 0, speed: 1 }
+unit Goblin { health: 8, attack: 1, defense: 0, speed: 1 }
+
+on turn Hero {
+	for (friend in allies) {
+		deal 5 to friend
+		heal 2 to friend
+	}
+	for (foe in enemies) {
+		log "{self} swings at {foe}"
+		deal 100 to enemies
+	}
+}
+
+party Heroes = [Hero, Cleric, Squire]
+encounter Goblins = [Goblin * 2]
+
+battle: [Heroes, Goblins]

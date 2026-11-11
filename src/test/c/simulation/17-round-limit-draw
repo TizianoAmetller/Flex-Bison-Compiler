@@ -1,0 +1,19 @@
+unit Hero { health: 10, attack: 0, defense: 0, speed: 5, abilities: [Tap] }
+unit Goblin { health: 10, attack: 0, defense: 0, speed: 1, abilities: [Tap] }
+
+ability Tap on target: enemy {
+	deal self.attack - target.defense to target
+}
+
+on turn Hero {
+	use Tap on nearest(enemy)
+}
+
+on turn Goblin {
+	use Tap on nearest(enemy)
+}
+
+party Heroes = [Hero]
+encounter Goblins = [Goblin]
+
+battle: [Heroes, Goblins]

@@ -1,0 +1,20 @@
+Seed: 1
+Arena: unbounded
+Team Heroes: 3 units
+Team Goblins: 2 units
+
+Round 1
+Cleric takes 5 damage (health 15/20)
+Cleric heals 2 (health 17/20)
+Squire takes 5 damage (health 15/20)
+Squire heals 2 (health 17/20)
+> Hero swings at Goblin#1
+Goblin#1 takes 100 damage (health 0/8)
+Goblin#1 dies
+Goblin#2 takes 100 damage (health 0/8)
+Goblin#2 dies
+
+Battle over after 1 round.
+Winner: Heroes
+Team Heroes: 3 alive, 0 dead
+Team Goblins: 0 alive, 2 dead

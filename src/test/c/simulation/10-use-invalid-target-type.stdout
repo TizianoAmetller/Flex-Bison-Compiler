@@ -1,0 +1,16 @@
+Seed: 1
+Arena: unbounded
+Team Heroes: 1 unit
+Team Undead: 1 unit
+
+Round 1
+Hero cannot use Heal on Skeleton: invalid target type
+Hero uses Heal on Hero
+  Hero heals 5 (health 10/10)
+Hero uses Smite on Skeleton
+  Skeleton takes 4 damage (health 6/10)
+
+Battle over after 1 round.
+Draw: round limit (1) reached
+Team Heroes: 1 alive, 0 dead
+Team Undead: 1 alive, 0 dead

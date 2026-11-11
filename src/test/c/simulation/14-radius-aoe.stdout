@@ -1,0 +1,15 @@
+Seed: 1
+Arena: unbounded
+Team Heroes: 1 unit
+Team Goblins: 3 units
+
+Round 1
+Hero uses Fireball on Goblin#1
+  Hero takes 3 damage (health 27/30)
+  Goblin#1 takes 3 damage (health 7/10)
+  Goblin#2 takes 3 damage (health 7/10)
+
+Battle over after 1 round.
+Draw: round limit (1) reached
+Team Heroes: 1 alive, 0 dead
+Team Goblins: 3 alive, 0 dead

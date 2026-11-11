@@ -1,0 +1,25 @@
+unit Alpha { health: 20, attack: 10, defense: 0, speed: 3, abilities: [Hit] }
+unit Beta { health: 20, attack: 10, defense: 0, speed: 2, abilities: [Hit] }
+unit Gamma { health: 20, attack: 10, defense: 0, speed: 1, abilities: [Hit] }
+
+ability Hit on target: enemy {
+	deal self.attack - target.defense to target
+}
+
+on turn Alpha {
+	use Hit on nearest(enemy)
+}
+
+on turn Beta {
+	use Hit on nearest(enemy)
+}
+
+on turn Gamma {
+	use Hit on nearest(enemy)
+}
+
+party A = [Alpha]
+encounter B = [Beta]
+encounter C = [Gamma]
+
+battle: [A, B, C]

@@ -1,0 +1,19 @@
+Seed: 1
+Arena: unbounded
+Team Heroes: 1 unit
+Team Dummies: 1 unit
+
+Round 1
+> and: the left side stopped it
+> or: the left side was enough
+> and: the right side was evaluated
+> or: the right side was evaluated
+Hero skips a statement: no unit found
+Hero skips a statement: no unit found
+Hero skips a statement: no unit found
+Hero skips a statement: no unit found
+
+Battle over after 1 round.
+Draw: round limit (1) reached
+Team Heroes: 1 alive, 0 dead
+Team Dummies: 1 alive, 0 dead

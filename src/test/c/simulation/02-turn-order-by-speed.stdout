@@ -1,0 +1,15 @@
+Seed: 1
+Arena: unbounded
+Team Blue: 2 units
+Team Red: 2 units
+
+Round 1
+> Fast acts
+> MidA acts
+> MidB acts
+> Slow acts
+
+Battle over after 1 round.
+Draw: round limit (1) reached
+Team Blue: 2 alive, 0 dead
+Team Red: 2 alive, 0 dead

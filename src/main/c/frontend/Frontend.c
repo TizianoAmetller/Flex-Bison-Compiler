@@ -39,6 +39,8 @@ static const char * _compilationStatusAsString(const CompilationStatus compilati
 			return "INVALID_USAGE";
 		case OUT_OF_MEMORY:
 			return "OUT_OF_MEMORY";
+		case SIMULATION_ERROR:
+			return "SIMULATION_ERROR";
 		case SUCCEEDED:
 			return "SUCCEEDED";
 		default:

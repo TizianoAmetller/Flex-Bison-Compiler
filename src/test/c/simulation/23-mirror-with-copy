@@ -1,0 +1,20 @@
+unit Archer { health: 10, attack: 1, defense: 0, speed: 5, abilities: [Volley] }
+unit EnemyArcher { health: 10, attack: 1, defense: 0, speed: 5, abilities: [Volley] }
+
+ability Volley on target: enemy {
+	log "{self} shoots"
+	deal 1 to enemies
+}
+
+on turn Archer {
+	use Volley on nearest(enemy)
+}
+
+on turn EnemyArcher {
+	use Volley on nearest(enemy)
+}
+
+party Blue = [Archer * 2]
+encounter Red = [EnemyArcher * 2]
+
+battle: [Blue, Red]

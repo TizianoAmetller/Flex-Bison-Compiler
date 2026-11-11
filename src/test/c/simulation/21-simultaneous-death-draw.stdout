@@ -1,0 +1,15 @@
+Seed: 1
+Arena: unbounded
+Team Blue: 1 unit
+Team Red: 1 unit
+
+Round 1
+Rival takes 100 damage (health 0/5)
+Rival dies
+Duelist takes 100 damage (health 0/5)
+Duelist dies
+
+Battle over after 1 round.
+Draw: nobody is left alive
+Team Blue: 0 alive, 1 dead
+Team Red: 0 alive, 1 dead

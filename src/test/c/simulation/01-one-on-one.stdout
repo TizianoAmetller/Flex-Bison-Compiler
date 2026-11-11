@@ -1,0 +1,20 @@
+Seed: 1
+Arena: unbounded
+Team Heroes: 1 unit
+Team Goblins: 1 unit
+
+Round 1
+Hero uses Slash on Goblin
+  Goblin takes 7 damage (health 5/12)
+Goblin uses Slash on Hero
+  Hero takes 3 damage (health 27/30)
+
+Round 2
+Hero uses Slash on Goblin
+  Goblin takes 7 damage (health 0/12)
+  Goblin dies
+
+Battle over after 2 rounds.
+Winner: Heroes
+Team Heroes: 1 alive, 0 dead
+Team Goblins: 0 alive, 1 dead

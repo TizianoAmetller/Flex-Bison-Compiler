@@ -1,0 +1,17 @@
+unit Hero at (11, 10) { health: 30, attack: 5, defense: 0, speed: 9, abilities: [Fireball] }
+unit Goblin { health: 10, attack: 1, defense: 0, speed: 1 }
+
+ability Fireball on target: enemy {
+	for (victim in radius 5 of target) {
+		deal 3 to victim
+	}
+}
+
+on turn Hero {
+	use Fireball on nearest(enemy)
+}
+
+party Heroes = [Hero]
+encounter Goblins = [Goblin at (10, 10), Goblin at (13, 14), Goblin at (20, 10)]
+
+battle: [Heroes, Goblins]

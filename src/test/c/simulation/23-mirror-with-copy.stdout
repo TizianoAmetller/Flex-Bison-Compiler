@@ -1,0 +1,27 @@
+Seed: 1
+Arena: unbounded
+Team Blue: 2 units
+Team Red: 2 units
+
+Round 1
+Archer#1 uses Volley on EnemyArcher#2
+  > Archer#1 shoots
+  EnemyArcher#1 takes 1 damage (health 9/10)
+  EnemyArcher#2 takes 1 damage (health 9/10)
+Archer#2 uses Volley on EnemyArcher#2
+  > Archer#2 shoots
+  EnemyArcher#1 takes 1 damage (health 8/10)
+  EnemyArcher#2 takes 1 damage (health 8/10)
+EnemyArcher#1 uses Volley on Archer#1
+  > EnemyArcher#1 shoots
+  Archer#1 takes 1 damage (health 9/10)
+  Archer#2 takes 1 damage (health 9/10)
+EnemyArcher#2 uses Volley on Archer#1
+  > EnemyArcher#2 shoots
+  Archer#1 takes 1 damage (health 8/10)
+  Archer#2 takes 1 damage (health 8/10)
+
+Battle over after 1 round.
+Draw: round limit (1) reached
+Team Blue: 2 alive, 0 dead
+Team Red: 2 alive, 0 dead

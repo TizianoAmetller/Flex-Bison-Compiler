@@ -1,0 +1,23 @@
+unit Hero { health: 20, attack: 1, defense: 0, speed: 5, abilities: [Hex] }
+unit Goblin { health: 3, attack: 1, defense: 0, speed: 1 }
+
+effect Poison on victim {
+	deal 5 to victim
+}
+
+ability Hex on target: enemy {
+	apply Poison to target for 3
+}
+
+on turn Hero {
+	use Hex on nearest(enemy)
+}
+
+on turn Goblin {
+	log "{self} acts"
+}
+
+party Heroes = [Hero]
+encounter Goblins = [Goblin]
+
+battle: [Heroes, Goblins]

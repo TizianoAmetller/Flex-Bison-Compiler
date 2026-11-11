@@ -1,0 +1,14 @@
+Seed: 1
+Arena: unbounded
+Team Blue: 3 units
+Team Red: 1 unit
+
+Round 1
+> Archer#3: health 8, attack 3, speed 3
+> Archer#1: health 10, attack 4, speed 1
+> Archer#2: health 7, attack 2, speed 1
+
+Battle over after 1 round.
+Draw: round limit (1) reached
+Team Blue: 3 alive, 0 dead
+Team Red: 1 alive, 0 dead

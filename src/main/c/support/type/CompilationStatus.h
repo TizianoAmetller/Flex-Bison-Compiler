@@ -25,6 +25,12 @@ typedef enum {
 	INVALID_USAGE = 100,
 
 	/**
+	 * The simulation of the battle failed (for example, a division by zero, or
+	 * going over one of its limits), after the program was accepted.
+	 */
+	SIMULATION_ERROR = 101,
+
+	/**
 	 * The compiler is out of memory and cannot proceed as expected.
 	 */
 	OUT_OF_MEMORY = 2,

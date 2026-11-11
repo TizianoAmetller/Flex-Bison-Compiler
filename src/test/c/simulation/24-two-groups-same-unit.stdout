@@ -1,0 +1,15 @@
+Seed: 1
+Arena: 30x30
+Team Blue: 4 units
+Team Red: 1 unit
+
+Round 1
+Archer#1 moves toward Dummy: (3, 7) -> (4, 8)
+Archer#2 moves toward Dummy: (3, 3) -> (4, 4)
+Archer#3 moves toward Dummy: (24, 26) -> (23, 25)
+Archer#4 moves toward Dummy: (23, 26) -> (22, 25)
+
+Battle over after 1 round.
+Draw: round limit (1) reached
+Team Blue: 4 alive, 0 dead
+Team Red: 1 alive, 0 dead

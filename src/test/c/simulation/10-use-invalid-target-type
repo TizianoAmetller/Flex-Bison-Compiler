@@ -1,0 +1,21 @@
+unit Hero { health: 10, attack: 1, defense: 0, speed: 5, abilities: [Heal, Smite] }
+unit Skeleton: undead { health: 10, attack: 1, defense: 0, speed: 1 }
+
+ability Heal on target: ally, self {
+	heal 5 to target
+}
+
+ability Smite on target: undead {
+	deal 4 to target
+}
+
+on turn Hero {
+	use Heal on nearest(enemy)
+	use Heal on self
+	use Smite on nearest(enemy)
+}
+
+party Heroes = [Hero]
+encounter Undead = [Skeleton]
+
+battle: [Heroes, Undead]

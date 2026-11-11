@@ -1,0 +1,22 @@
+Seed: 1
+Arena: unbounded
+Team Heroes: 1 unit
+Team Goblins: 1 unit
+
+Round 1
+Hero uses Hex on Goblin
+  Goblin is affected by Poison for 2 turns
+Poison acts on Goblin
+  Goblin takes 2 damage (health 18/20)
+
+Round 2
+Poison acts on Goblin
+  Goblin takes 2 damage (health 16/20)
+Poison wears off from Goblin
+
+Round 3
+
+Battle over after 3 rounds.
+Draw: round limit (3) reached
+Team Heroes: 1 alive, 0 dead
+Team Goblins: 1 alive, 0 dead

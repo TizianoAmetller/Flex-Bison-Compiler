@@ -1,0 +1,11 @@
+unit Archer { health: 1d6 + 4, attack: 1d4, defense: 0, speed: 1d3 }
+unit Dummy { health: 10, attack: 0, defense: 0, speed: 0 }
+
+on turn Archer {
+	log "{self}: health {self.health}, attack {self.attack}, speed {self.speed}"
+}
+
+party Blue = [Archer * 3]
+encounter Red = [Dummy]
+
+battle: [Blue, Red]

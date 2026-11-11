@@ -1,0 +1,21 @@
+unit Hero { health: 20, attack: 1, defense: 0, speed: 5, abilities: [Hex] }
+unit Goblin { health: 20, attack: 1, defense: 0, speed: 1 }
+
+effect Poison on victim {
+	deal 2 to victim
+}
+
+ability Hex on target: enemy {
+	apply Poison to target for 2
+}
+
+on turn Hero {
+	if (nearest(enemy).health == 20) {
+		use Hex on nearest(enemy)
+	}
+}
+
+party Heroes = [Hero]
+encounter Goblins = [Goblin]
+
+battle: [Heroes, Goblins]

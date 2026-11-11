@@ -7,6 +7,7 @@ x-shared:
     ENVIRONMENT: "${ENVIRONMENT:-Local}"
     LOG_IGNORED_LEXEMES: "${LOG_IGNORED_LEXEMES:-true}"
     LOGGING_LEVEL: "${LOGGING_LEVEL:-ALL}"
+    SEED: "${SEED:-}"
 
 networks:
   ar-edu-itba-atlyc:

@@ -1,0 +1,15 @@
+Seed: 1
+Arena: 10x10
+Team Heroes: 1 unit
+Team Goblins: 1 unit
+
+Round 1
+Hero moves away from Goblin: (8, 5) -> (9, 5)
+
+Round 2
+Hero stays at (9, 5)
+
+Battle over after 2 rounds.
+Draw: round limit (2) reached
+Team Heroes: 1 alive, 0 dead
+Team Goblins: 1 alive, 0 dead

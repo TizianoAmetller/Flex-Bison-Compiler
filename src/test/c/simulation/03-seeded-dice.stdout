@@ -1,0 +1,32 @@
+Seed: 1
+Arena: unbounded
+Team Heroes: 1 unit
+Team Goblins: 1 unit
+
+Round 1
+Hero uses Strike on Goblin
+  Goblin takes 8 damage (health 22/30)
+Goblin uses Stab on Hero
+  Hero takes 2 damage (health 38/40)
+
+Round 2
+Hero uses Strike on Goblin
+  Goblin takes 10 damage (health 12/30)
+Goblin uses Stab on Hero
+  Hero takes 4 damage (health 34/40)
+
+Round 3
+Hero uses Strike on Goblin
+  Goblin takes 8 damage (health 4/30)
+Goblin uses Stab on Hero
+  Hero takes 2 damage (health 32/40)
+
+Round 4
+Hero uses Strike on Goblin
+  Goblin takes 9 damage (health 0/30)
+  Goblin dies
+
+Battle over after 4 rounds.
+Winner: Heroes
+Team Heroes: 1 alive, 0 dead
+Team Goblins: 0 alive, 1 dead

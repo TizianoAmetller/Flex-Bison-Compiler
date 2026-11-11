@@ -1,0 +1,12 @@
+unit Duelist { health: 5, attack: 10, defense: 0, speed: 5 }
+unit Rival { health: 5, attack: 10, defense: 0, speed: 1 }
+
+on turn Duelist {
+	deal 100 to nearest(enemy)
+	deal 100 to self
+}
+
+party Blue = [Duelist]
+encounter Red = [Rival]
+
+battle: [Blue, Red]

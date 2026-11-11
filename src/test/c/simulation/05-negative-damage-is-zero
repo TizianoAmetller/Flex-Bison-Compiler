@@ -1,0 +1,12 @@
+unit Hero { health: 10, attack: 1, defense: 0, speed: 5 }
+unit Wall { health: 10, attack: 0, defense: 5, speed: 1 }
+
+on turn Hero {
+	deal 2 - 10 to nearest(enemy)
+	deal self.attack - nearest(enemy).defense to nearest(enemy)
+}
+
+party Heroes = [Hero]
+encounter Walls = [Wall]
+
+battle: [Heroes, Walls]

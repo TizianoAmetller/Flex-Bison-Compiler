@@ -121,7 +121,7 @@ Set the following environment variables to control and configure the behaviour o
 | :-------------------- | :-----: | :---------- |
 | `ENVIRONMENT`         | `Local` | The active environment name. The available environments are: `Local`, `Development` and `Production`. |
 | `LOG_IGNORED_LEXEMES` | `true`  | When `true`, logs all of the ignored lexemes found with Flex at `DEBUGGING` level. |
-| `LOGGING_LEVEL`       | `ALL`   | The minimum level to log in the console output. From lower to higher, the available levels are: `ALL`, `DEBUGGING`, `INFORMATION`, `WARNING`, `ERROR` and `CRITICAL`. The default is `ALL` under Docker Compose, and `INFORMATION` when the binary runs on its own. |
+| `LOGGING_LEVEL`       | `ALL`   | The minimum level to log on the standard error. From lower to higher, the available levels are: `ALL`, `DEBUGGING`, `INFORMATION`, `WARNING`, `ERROR` and `CRITICAL`. The default is `ALL` under Docker Compose, and `INFORMATION` when the binary runs on its own. |
 
 _Docker Compose_ can read the variables from an `.env` file too (see `compose.yaml` file).
 
@@ -148,10 +148,10 @@ src/main/bash/build.sh
 Compiles a program:
 
 ```bash
-src/main/bash/run.sh <program>
+src/main/bash/run.sh <program> [--syntax-only]
 ```
 
-where `<program>` is the path to the file that represents its entry-point. The exit status is `0` when the program is accepted and `1` when it is rejected, and a syntax error reports its line. To watch the AST being built, run with `LOGGING_LEVEL=DEBUGGING`: the semantic actions log themselves in the order they build it.
+where `<program>` is the path to the file that represents its entry-point. The options after it are forwarded to the compiler, and the only one is `--syntax-only`, which stops after the syntactic analysis. The exit status is `0` when the program is accepted, `1` when it is rejected and `100` when the command line is invalid (for example, an unknown option), and a syntax error reports its line. Every log goes to the standard error, so the standard output is reserved for the output of the compiled program. To watch the AST being built, run with `LOGGING_LEVEL=DEBUGGING`: the semantic actions log themselves in the order they build it.
 
 ### Test
 
@@ -177,7 +177,9 @@ The tests under `src/test/c` only check syntax:
 * `src/test/c/accept`: valid programs, which must be accepted.
 * `src/test/c/reject`: invalid programs, which must be rejected.
 
-Each test is as small as possible and covers a single feature, and a few of the rejections pin down restrictions that are intentional (for example, `around` only goes with a quantity, and `at` only without one). A few larger programs show the features working together. The build links AddressSanitizer, so every run of the suite also checks for memory errors and leaks.
+Each test is as small as possible and covers a single feature, and a few of the rejections pin down restrictions that are intentional (for example, `around` only goes with a quantity, and `at` only without one). A few larger programs show the features working together.
+
+`test.sh` runs every program with `--syntax-only` and requires the exact exit status: `0` for `accept` and `1` for `reject`. The build links AddressSanitizer and UndefinedBehaviorSanitizer, and a test also fails when its standard error holds a sanitizer report, so a crash can't pass as a rejection.
 
 ## Documentation
 

@@ -150,6 +150,8 @@ enum ExpressionType {
  */
 struct IdentifierList {
 	char * identifier;
+	/** The 1-based source line where this identifier is written. */
+	int line;
 	IdentifierList * next;
 };
 
@@ -171,6 +173,8 @@ struct Position {
 struct Attribute {
 	char * name;
 	Expression * value;
+	/** The 1-based source line where this attribute starts (its name). */
+	int line;
 };
 
 struct AttributeList {
@@ -209,6 +213,8 @@ struct Expression {
 		char * text;
 	};
 	ExpressionType type;
+	/** The 1-based source line where this expression starts (its first token). */
+	int line;
 };
 
 /** deal <amount> to <target> */
@@ -285,6 +291,8 @@ struct Statement {
 		WhileStatement * whileStatement;
 	};
 	StatementType type;
+	/** The 1-based source line where this statement starts (its first token). */
+	int line;
 };
 
 struct StatementList {
@@ -372,6 +380,8 @@ struct Member {
 	Expression * quantity;
 	/** NULL when the member has no position of its own. */
 	Position * position;
+	/** The 1-based source line where this member starts (its unit name). */
+	int line;
 };
 
 struct MemberList {
@@ -420,6 +430,8 @@ struct Declaration {
 		UnitDeclaration * unitDeclaration;
 	};
 	DeclarationType type;
+	/** The 1-based source line where this declaration starts (its first token). */
+	int line;
 };
 
 struct DeclarationList {

@@ -14,20 +14,25 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 	add_custom_command(
 		OUTPUT ../src/main/c/frontend/syntactic-analysis/BisonParser.c ../src/main/c/frontend/syntactic-analysis/BisonParser.h
 		COMMAND ../src/main/bash/bison.sh
+		DEPENDS ${CMAKE_SOURCE_DIR}/src/main/c/frontend/syntactic-analysis/BisonGrammar.y
 	)
 
 	# Options for GCC.
 	add_compile_options(-fsanitize=address)
+	add_compile_options(-fsanitize=undefined)
 	add_compile_options(-O3)
 	add_compile_options(-static-libgcc)
 	add_compile_options(-std=gnu99)
+	add_compile_options(-Wall)
+	add_compile_options(-Wextra)
 	add_link_options(-fsanitize=address)
+	add_link_options(-fsanitize=undefined)
 
 	# Compiles the scanner with Flex.
 	add_custom_command(
 		OUTPUT ../src/main/c/frontend/lexical-analysis/FlexScanner.c ../src/main/c/frontend/lexical-analysis/FlexScanner.h
 		COMMAND ../src/main/bash/flex.sh
-		DEPENDS ../src/main/c/frontend/syntactic-analysis/BisonParser.c ../src/main/c/frontend/syntactic-analysis/BisonParser.h
+		DEPENDS ../src/main/c/frontend/syntactic-analysis/BisonParser.c ../src/main/c/frontend/syntactic-analysis/BisonParser.h ${CMAKE_SOURCE_DIR}/src/main/c/frontend/lexical-analysis/FlexPatterns.l
 	)
 
 	# Defines the entry-point of the application, and the source-codes (*.c extension).
@@ -50,6 +55,13 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 		src/main/c/support/logging/Logger.c
 		# Add more *.c files if needed (otherwise, they won't be compiled).
 		# ...
+	)
+
+	# Flex emits a few helpers that this scanner never calls (yyunput, input and
+	# yy_top_state), which the warnings above would report on every build.
+	set_source_files_properties(
+		src/main/c/frontend/lexical-analysis/FlexScanner.c
+		PROPERTIES COMPILE_OPTIONS -Wno-unused-function
 	)
 
 	# Link final project and libraries.

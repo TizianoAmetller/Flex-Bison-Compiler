@@ -63,59 +63,66 @@ DeclarationList * AddDeclarationSemanticAction(Declaration * declaration, Declar
 	return declarationList;
 }
 
-Declaration * UnitDeclarationSemanticAction(UnitDeclaration * unitDeclaration) {
+Declaration * UnitDeclarationSemanticAction(const int line, UnitDeclaration * unitDeclaration) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Declaration * declaration = calloc(1, sizeof(Declaration));
 	declaration->unitDeclaration = unitDeclaration;
 	declaration->type = UNIT_DECLARATION;
+	declaration->line = line;
 	return declaration;
 }
 
-Declaration * AbilityDeclarationSemanticAction(AbilityDeclaration * abilityDeclaration) {
+Declaration * AbilityDeclarationSemanticAction(const int line, AbilityDeclaration * abilityDeclaration) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Declaration * declaration = calloc(1, sizeof(Declaration));
 	declaration->abilityDeclaration = abilityDeclaration;
 	declaration->type = ABILITY_DECLARATION;
+	declaration->line = line;
 	return declaration;
 }
 
-Declaration * TurnDeclarationSemanticAction(TurnDeclaration * turnDeclaration) {
+Declaration * TurnDeclarationSemanticAction(const int line, TurnDeclaration * turnDeclaration) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Declaration * declaration = calloc(1, sizeof(Declaration));
 	declaration->turnDeclaration = turnDeclaration;
 	declaration->type = TURN_DECLARATION;
+	declaration->line = line;
 	return declaration;
 }
 
-Declaration * TeamDeclarationSemanticAction(TeamDeclaration * teamDeclaration) {
+Declaration * TeamDeclarationSemanticAction(const int line, TeamDeclaration * teamDeclaration) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Declaration * declaration = calloc(1, sizeof(Declaration));
 	declaration->teamDeclaration = teamDeclaration;
 	declaration->type = TEAM_DECLARATION;
+	declaration->line = line;
 	return declaration;
 }
 
-Declaration * ArenaDeclarationSemanticAction(ArenaDeclaration * arenaDeclaration) {
+Declaration * ArenaDeclarationSemanticAction(const int line, ArenaDeclaration * arenaDeclaration) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Declaration * declaration = calloc(1, sizeof(Declaration));
 	declaration->arenaDeclaration = arenaDeclaration;
 	declaration->type = ARENA_DECLARATION;
+	declaration->line = line;
 	return declaration;
 }
 
-Declaration * BattleDeclarationSemanticAction(BattleDeclaration * battleDeclaration) {
+Declaration * BattleDeclarationSemanticAction(const int line, BattleDeclaration * battleDeclaration) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Declaration * declaration = calloc(1, sizeof(Declaration));
 	declaration->battleDeclaration = battleDeclaration;
 	declaration->type = BATTLE_DECLARATION;
+	declaration->line = line;
 	return declaration;
 }
 
-Declaration * EffectDeclarationSemanticAction(EffectDeclaration * effectDeclaration) {
+Declaration * EffectDeclarationSemanticAction(const int line, EffectDeclaration * effectDeclaration) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Declaration * declaration = calloc(1, sizeof(Declaration));
 	declaration->effectDeclaration = effectDeclaration;
 	declaration->type = EFFECT_DECLARATION;
+	declaration->line = line;
 	return declaration;
 }
 
@@ -160,18 +167,20 @@ AttributeList * AddAttributeSemanticAction(Attribute * attribute, AttributeList 
 	return attributeList;
 }
 
-Attribute * AttributeSemanticAction(char * name, Expression * value) {
+Attribute * AttributeSemanticAction(const int line, char * name, Expression * value) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Attribute * attribute = calloc(1, sizeof(Attribute));
 	attribute->name = name;
 	attribute->value = value;
+	attribute->line = line;
 	return attribute;
 }
 
-IdentifierList * AddIdentifierSemanticAction(char * identifier, IdentifierList * next) {
+IdentifierList * AddIdentifierSemanticAction(const int line, char * identifier, IdentifierList * next) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	IdentifierList * identifierList = calloc(1, sizeof(IdentifierList));
 	identifierList->identifier = identifier;
+	identifierList->line = line;
 	identifierList->next = next;
 	return identifierList;
 }
@@ -260,12 +269,13 @@ MemberList * AddMemberSemanticAction(Member * member, MemberList * next) {
 	return memberList;
 }
 
-Member * MemberSemanticAction(char * unitName, Expression * quantity, Position * position) {
+Member * MemberSemanticAction(const int line, char * unitName, Expression * quantity, Position * position) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Member * member = calloc(1, sizeof(Member));
 	member->unitName = unitName;
 	member->quantity = quantity;
 	member->position = position;
+	member->line = line;
 	return member;
 }
 
@@ -289,7 +299,7 @@ StatementList * BlockSemanticAction(StatementList * statements) {
 	return statements;
 }
 
-Statement * DealStatementSemanticAction(Expression * amount, Expression * target) {
+Statement * DealStatementSemanticAction(const int line, Expression * amount, Expression * target) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	DealStatement * dealStatement = calloc(1, sizeof(DealStatement));
 	dealStatement->amount = amount;
@@ -297,10 +307,11 @@ Statement * DealStatementSemanticAction(Expression * amount, Expression * target
 	Statement * statement = calloc(1, sizeof(Statement));
 	statement->dealStatement = dealStatement;
 	statement->type = DEAL_STATEMENT;
+	statement->line = line;
 	return statement;
 }
 
-Statement * HealStatementSemanticAction(Expression * amount, Expression * target) {
+Statement * HealStatementSemanticAction(const int line, Expression * amount, Expression * target) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	HealStatement * healStatement = calloc(1, sizeof(HealStatement));
 	healStatement->amount = amount;
@@ -308,10 +319,11 @@ Statement * HealStatementSemanticAction(Expression * amount, Expression * target
 	Statement * statement = calloc(1, sizeof(Statement));
 	statement->healStatement = healStatement;
 	statement->type = HEAL_STATEMENT;
+	statement->line = line;
 	return statement;
 }
 
-Statement * UseStatementSemanticAction(char * abilityName, Expression * target) {
+Statement * UseStatementSemanticAction(const int line, char * abilityName, Expression * target) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	UseStatement * useStatement = calloc(1, sizeof(UseStatement));
 	useStatement->abilityName = abilityName;
@@ -319,10 +331,11 @@ Statement * UseStatementSemanticAction(char * abilityName, Expression * target) 
 	Statement * statement = calloc(1, sizeof(Statement));
 	statement->useStatement = useStatement;
 	statement->type = USE_STATEMENT;
+	statement->line = line;
 	return statement;
 }
 
-Statement * ApplyStatementSemanticAction(char * effectName, Expression * target, Expression * duration) {
+Statement * ApplyStatementSemanticAction(const int line, char * effectName, Expression * target, Expression * duration) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	ApplyStatement * applyStatement = calloc(1, sizeof(ApplyStatement));
 	applyStatement->effectName = effectName;
@@ -331,20 +344,22 @@ Statement * ApplyStatementSemanticAction(char * effectName, Expression * target,
 	Statement * statement = calloc(1, sizeof(Statement));
 	statement->applyStatement = applyStatement;
 	statement->type = APPLY_STATEMENT;
+	statement->line = line;
 	return statement;
 }
 
-Statement * LogStatementSemanticAction(char * message) {
+Statement * LogStatementSemanticAction(const int line, char * message) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	LogStatement * logStatement = calloc(1, sizeof(LogStatement));
 	logStatement->message = message;
 	Statement * statement = calloc(1, sizeof(Statement));
 	statement->logStatement = logStatement;
 	statement->type = LOG_STATEMENT;
+	statement->line = line;
 	return statement;
 }
 
-Statement * MoveStatementSemanticAction(MoveDirection direction, Expression * target) {
+Statement * MoveStatementSemanticAction(const int line, MoveDirection direction, Expression * target) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	MoveStatement * moveStatement = calloc(1, sizeof(MoveStatement));
 	moveStatement->direction = direction;
@@ -352,10 +367,11 @@ Statement * MoveStatementSemanticAction(MoveDirection direction, Expression * ta
 	Statement * statement = calloc(1, sizeof(Statement));
 	statement->moveStatement = moveStatement;
 	statement->type = MOVE_STATEMENT;
+	statement->line = line;
 	return statement;
 }
 
-Statement * IfStatementSemanticAction(Expression * condition, StatementList * thenBranch, StatementList * elseBranch) {
+Statement * IfStatementSemanticAction(const int line, Expression * condition, StatementList * thenBranch, StatementList * elseBranch) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	IfStatement * ifStatement = calloc(1, sizeof(IfStatement));
 	ifStatement->condition = condition;
@@ -364,10 +380,11 @@ Statement * IfStatementSemanticAction(Expression * condition, StatementList * th
 	Statement * statement = calloc(1, sizeof(Statement));
 	statement->ifStatement = ifStatement;
 	statement->type = IF_STATEMENT;
+	statement->line = line;
 	return statement;
 }
 
-Statement * ForStatementSemanticAction(char * iterator, Expression * collection, StatementList * body) {
+Statement * ForStatementSemanticAction(const int line, char * iterator, Expression * collection, StatementList * body) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	ForStatement * forStatement = calloc(1, sizeof(ForStatement));
 	forStatement->iterator = iterator;
@@ -376,10 +393,11 @@ Statement * ForStatementSemanticAction(char * iterator, Expression * collection,
 	Statement * statement = calloc(1, sizeof(Statement));
 	statement->forStatement = forStatement;
 	statement->type = FOR_STATEMENT;
+	statement->line = line;
 	return statement;
 }
 
-Statement * WhileStatementSemanticAction(Expression * condition, StatementList * body) {
+Statement * WhileStatementSemanticAction(const int line, Expression * condition, StatementList * body) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	WhileStatement * whileStatement = calloc(1, sizeof(WhileStatement));
 	whileStatement->condition = condition;
@@ -387,43 +405,48 @@ Statement * WhileStatementSemanticAction(Expression * condition, StatementList *
 	Statement * statement = calloc(1, sizeof(Statement));
 	statement->whileStatement = whileStatement;
 	statement->type = WHILE_STATEMENT;
+	statement->line = line;
 	return statement;
 }
 
 /** Expressions. */
 
-Expression * BinaryExpressionSemanticAction(Expression * leftExpression, Expression * rightExpression, ExpressionType type) {
+Expression * BinaryExpressionSemanticAction(const int line, Expression * leftExpression, Expression * rightExpression, ExpressionType type) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Expression * expression = calloc(1, sizeof(Expression));
 	expression->leftExpression = leftExpression;
 	expression->rightExpression = rightExpression;
 	expression->type = type;
+	expression->line = line;
 	return expression;
 }
 
-Expression * UnaryExpressionSemanticAction(Expression * operand, ExpressionType type) {
+Expression * UnaryExpressionSemanticAction(const int line, Expression * operand, ExpressionType type) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Expression * expression = calloc(1, sizeof(Expression));
 	expression->operand = operand;
 	expression->type = type;
+	expression->line = line;
 	return expression;
 }
 
-Expression * MemberExpressionSemanticAction(Expression * object, char * member) {
+Expression * MemberExpressionSemanticAction(const int line, Expression * object, char * member) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Expression * expression = calloc(1, sizeof(Expression));
 	expression->object = object;
 	expression->member = member;
 	expression->type = MEMBER_EXPRESSION;
+	expression->line = line;
 	return expression;
 }
 
-Expression * CallExpressionSemanticAction(char * functionName, ExpressionList * arguments) {
+Expression * CallExpressionSemanticAction(const int line, char * functionName, ExpressionList * arguments) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Expression * expression = calloc(1, sizeof(Expression));
 	expression->functionName = functionName;
 	expression->arguments = arguments;
 	expression->type = CALL_EXPRESSION;
+	expression->line = line;
 	return expression;
 }
 
@@ -434,11 +457,11 @@ Expression * CallExpressionSemanticAction(char * functionName, ExpressionList * 
  * being written inline as a ternary in the grammar file, so this rule has
  * its own semantic-action function like every other one.
  */
-Expression * IdOrCallExpressionSemanticAction(char * identifier, const CallSuffix callSuffix) {
+Expression * IdOrCallExpressionSemanticAction(const int line, char * identifier, const CallSuffix callSuffix) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	return callSuffix.isCall
-		? CallExpressionSemanticAction(identifier, callSuffix.arguments)
-		: IdentifierExpressionSemanticAction(identifier);
+		? CallExpressionSemanticAction(line, identifier, callSuffix.arguments)
+		: IdentifierExpressionSemanticAction(line, identifier);
 }
 
 CallSuffix CallSuffixSemanticAction(ExpressionList * arguments) {
@@ -468,52 +491,58 @@ Expression * ParenthesizedExpressionSemanticAction(Expression * expression) {
 	return expression;
 }
 
-Expression * RadiusExpressionSemanticAction(Expression * radius, Expression * center) {
+Expression * RadiusExpressionSemanticAction(const int line, Expression * radius, Expression * center) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Expression * expression = calloc(1, sizeof(Expression));
 	expression->radius = radius;
 	expression->center = center;
 	expression->type = RADIUS_EXPRESSION;
+	expression->line = line;
 	return expression;
 }
 
-Expression * DiceExpressionSemanticAction(const DiceValue dice) {
+Expression * DiceExpressionSemanticAction(const int line, const DiceValue dice) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Expression * expression = calloc(1, sizeof(Expression));
 	expression->dice = dice;
 	expression->type = DICE_EXPRESSION;
+	expression->line = line;
 	return expression;
 }
 
-Expression * IntegerExpressionSemanticAction(const int value) {
+Expression * IntegerExpressionSemanticAction(const int line, const int value) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Expression * expression = calloc(1, sizeof(Expression));
 	expression->integerValue = value;
 	expression->type = INTEGER_EXPRESSION;
+	expression->line = line;
 	return expression;
 }
 
-Expression * BooleanExpressionSemanticAction(const bool value) {
+Expression * BooleanExpressionSemanticAction(const int line, const bool value) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Expression * expression = calloc(1, sizeof(Expression));
 	expression->booleanValue = value;
 	expression->type = BOOLEAN_EXPRESSION;
+	expression->line = line;
 	return expression;
 }
 
-Expression * StringExpressionSemanticAction(char * text) {
+Expression * StringExpressionSemanticAction(const int line, char * text) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Expression * expression = calloc(1, sizeof(Expression));
 	expression->text = text;
 	expression->type = STRING_EXPRESSION;
+	expression->line = line;
 	return expression;
 }
 
-Expression * IdentifierExpressionSemanticAction(char * text) {
+Expression * IdentifierExpressionSemanticAction(const int line, char * text) {
 	_logSyntacticAnalyzerAction(__FUNCTION__);
 	Expression * expression = calloc(1, sizeof(Expression));
 	expression->text = text;
 	expression->type = IDENTIFIER_EXPRESSION;
+	expression->line = line;
 	return expression;
 }
 

@@ -54,6 +54,10 @@
 *.yml text eol=lf
 Dockerfile text eol=lf
 
+# Test fixtures and golden files: they have no extension (or a custom one), and
+# any CRLF would change what the compiler reads and the output it is compared to.
+src/test/** text eol=lf
+
 # Binary formats.
 *.bmp binary
 *.dll binary

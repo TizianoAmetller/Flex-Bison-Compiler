@@ -241,13 +241,13 @@ declarationList: declaration declarationList					{ $$ = AddDeclarationSemanticAc
 	| %empty													{ $$ = NULL; }
 	;
 
-declaration: unitDeclaration									{ $$ = UnitDeclarationSemanticAction($1); }
-	| abilityDeclaration										{ $$ = AbilityDeclarationSemanticAction($1); }
-	| turnDeclaration											{ $$ = TurnDeclarationSemanticAction($1); }
-	| teamDeclaration											{ $$ = TeamDeclarationSemanticAction($1); }
-	| arenaDeclaration											{ $$ = ArenaDeclarationSemanticAction($1); }
-	| battleDeclaration											{ $$ = BattleDeclarationSemanticAction($1); }
-	| effectDeclaration											{ $$ = EffectDeclarationSemanticAction($1); }
+declaration: unitDeclaration									{ $$ = UnitDeclarationSemanticAction(@$.first_line, $1); }
+	| abilityDeclaration										{ $$ = AbilityDeclarationSemanticAction(@$.first_line, $1); }
+	| turnDeclaration											{ $$ = TurnDeclarationSemanticAction(@$.first_line, $1); }
+	| teamDeclaration											{ $$ = TeamDeclarationSemanticAction(@$.first_line, $1); }
+	| arenaDeclaration											{ $$ = ArenaDeclarationSemanticAction(@$.first_line, $1); }
+	| battleDeclaration											{ $$ = BattleDeclarationSemanticAction(@$.first_line, $1); }
+	| effectDeclaration											{ $$ = EffectDeclarationSemanticAction(@$.first_line, $1); }
 	;
 
 /**
@@ -313,15 +313,15 @@ attributeListWithComma: attribute COMMA attributeListWithComma	{ $$ = AddAttribu
  * speed}, each appearing once, is a semantic-analysis concern (Stage III),
  * not a syntactic one.
  */
-attribute: ID COLON expression									{ $$ = AttributeSemanticAction($1, $3); }
+attribute: ID COLON expression									{ $$ = AttributeSemanticAction(@$.first_line, $1, $3); }
 	;
 
 abilitiesClause: ABILITIES COLON OPEN_BRACKET idList CLOSE_BRACKET
 																{ $$ = AbilitiesClauseSemanticAction($idList); }
 	;
 
-idList: ID COMMA idList										{ $$ = AddIdentifierSemanticAction($1, $3); }
-	| ID														{ $$ = AddIdentifierSemanticAction($1, NULL); }
+idList: ID COMMA idList										{ $$ = AddIdentifierSemanticAction(@ID.first_line, $1, $3); }
+	| ID														{ $$ = AddIdentifierSemanticAction(@ID.first_line, $1, NULL); }
 	;
 
 /**
@@ -386,8 +386,8 @@ memberList: member COMMA memberList							{ $$ = AddMemberSemanticAction($1, $3)
  * error: a lone unit has nothing to surround, and twenty units can't share
  * one exact spot.
  */
-member: ID[unitName] positionClause								{ $$ = MemberSemanticAction($unitName, NULL, $positionClause); }
-	| ID[unitName] MUL expression[quantity] aroundClause		{ $$ = MemberSemanticAction($unitName, $quantity, $aroundClause); }
+member: ID[unitName] positionClause								{ $$ = MemberSemanticAction(@$.first_line, $unitName, NULL, $positionClause); }
+	| ID[unitName] MUL expression[quantity] aroundClause		{ $$ = MemberSemanticAction(@$.first_line, $unitName, $quantity, $aroundClause); }
 	;
 
 aroundClause: AROUND OPEN_PARENTHESIS expression[x] COMMA expression[y] CLOSE_PARENTHESIS
@@ -412,20 +412,20 @@ statementList: statement statementList							{ $$ = AddStatementSemanticAction($
 	| %empty													{ $$ = NULL; }
 	;
 
-statement: DEAL expression TO expression						{ $$ = DealStatementSemanticAction($2, $4); }
-	| HEAL expression TO expression							{ $$ = HealStatementSemanticAction($2, $4); }
-	| USE ID ON expression										{ $$ = UseStatementSemanticAction($2, $4); }
-	| APPLY ID TO expression FOR expression					{ $$ = ApplyStatementSemanticAction($2, $4, $6); }
-	| LOG STRING												{ $$ = LogStatementSemanticAction($2); }
-	| MOVE TOWARD expression[target]							{ $$ = MoveStatementSemanticAction(TOWARD_MOVE, $target); }
-	| MOVE AWAY FROM expression[target]						{ $$ = MoveStatementSemanticAction(AWAY_MOVE, $target); }
+statement: DEAL expression TO expression						{ $$ = DealStatementSemanticAction(@$.first_line, $2, $4); }
+	| HEAL expression TO expression							{ $$ = HealStatementSemanticAction(@$.first_line, $2, $4); }
+	| USE ID ON expression										{ $$ = UseStatementSemanticAction(@$.first_line, $2, $4); }
+	| APPLY ID TO expression FOR expression					{ $$ = ApplyStatementSemanticAction(@$.first_line, $2, $4, $6); }
+	| LOG STRING												{ $$ = LogStatementSemanticAction(@$.first_line, $2); }
+	| MOVE TOWARD expression[target]							{ $$ = MoveStatementSemanticAction(@$.first_line, TOWARD_MOVE, $target); }
+	| MOVE AWAY FROM expression[target]						{ $$ = MoveStatementSemanticAction(@$.first_line, AWAY_MOVE, $target); }
 	| IF OPEN_PARENTHESIS expression CLOSE_PARENTHESIS block[thenBranch] ELSE block[elseBranch]
-																{ $$ = IfStatementSemanticAction($3, $thenBranch, $elseBranch); }
-	| IF OPEN_PARENTHESIS expression CLOSE_PARENTHESIS block	{ $$ = IfStatementSemanticAction($3, $5, NULL); }
+																{ $$ = IfStatementSemanticAction(@$.first_line, $3, $thenBranch, $elseBranch); }
+	| IF OPEN_PARENTHESIS expression CLOSE_PARENTHESIS block	{ $$ = IfStatementSemanticAction(@$.first_line, $3, $5, NULL); }
 	| FOR OPEN_PARENTHESIS ID IN expression CLOSE_PARENTHESIS block
-																{ $$ = ForStatementSemanticAction($3, $5, $7); }
+																{ $$ = ForStatementSemanticAction(@$.first_line, $3, $5, $7); }
 	| WHILE OPEN_PARENTHESIS expression CLOSE_PARENTHESIS block
-																{ $$ = WhileStatementSemanticAction($3, $5); }
+																{ $$ = WhileStatementSemanticAction(@$.first_line, $3, $5); }
 	;
 
 /**
@@ -439,19 +439,19 @@ statement: DEAL expression TO expression						{ $$ = DealStatementSemanticAction
  * Bison reports as an unresolved shift/reduce conflict.
  */
 
-expression: expression[left] ADD expression[right]			{ $$ = BinaryExpressionSemanticAction($left, $right, ADD_EXPRESSION); }
-	| expression[left] SUB expression[right]					{ $$ = BinaryExpressionSemanticAction($left, $right, SUB_EXPRESSION); }
-	| expression[left] MUL expression[right]					{ $$ = BinaryExpressionSemanticAction($left, $right, MUL_EXPRESSION); }
-	| expression[left] DIV expression[right]					{ $$ = BinaryExpressionSemanticAction($left, $right, DIV_EXPRESSION); }
-	| expression[left] EQUALS expression[right]				{ $$ = BinaryExpressionSemanticAction($left, $right, EQUALS_EXPRESSION); }
-	| expression[left] NOT_EQUALS expression[right]			{ $$ = BinaryExpressionSemanticAction($left, $right, NOT_EQUALS_EXPRESSION); }
-	| expression[left] LESS_THAN expression[right]				{ $$ = BinaryExpressionSemanticAction($left, $right, LESS_THAN_EXPRESSION); }
-	| expression[left] GREATER_THAN expression[right]			{ $$ = BinaryExpressionSemanticAction($left, $right, GREATER_THAN_EXPRESSION); }
-	| expression[left] LESS_EQUAL expression[right]			{ $$ = BinaryExpressionSemanticAction($left, $right, LESS_EQUAL_EXPRESSION); }
-	| expression[left] GREATER_EQUAL expression[right]			{ $$ = BinaryExpressionSemanticAction($left, $right, GREATER_EQUAL_EXPRESSION); }
-	| expression[left] AND expression[right]					{ $$ = BinaryExpressionSemanticAction($left, $right, AND_EXPRESSION); }
-	| expression[left] OR expression[right]					{ $$ = BinaryExpressionSemanticAction($left, $right, OR_EXPRESSION); }
-	| NOT expression											{ $$ = UnaryExpressionSemanticAction($2, NOT_EXPRESSION); }
+expression: expression[left] ADD expression[right]			{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, ADD_EXPRESSION); }
+	| expression[left] SUB expression[right]					{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, SUB_EXPRESSION); }
+	| expression[left] MUL expression[right]					{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, MUL_EXPRESSION); }
+	| expression[left] DIV expression[right]					{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, DIV_EXPRESSION); }
+	| expression[left] EQUALS expression[right]				{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, EQUALS_EXPRESSION); }
+	| expression[left] NOT_EQUALS expression[right]			{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, NOT_EQUALS_EXPRESSION); }
+	| expression[left] LESS_THAN expression[right]				{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, LESS_THAN_EXPRESSION); }
+	| expression[left] GREATER_THAN expression[right]			{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, GREATER_THAN_EXPRESSION); }
+	| expression[left] LESS_EQUAL expression[right]			{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, LESS_EQUAL_EXPRESSION); }
+	| expression[left] GREATER_EQUAL expression[right]			{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, GREATER_EQUAL_EXPRESSION); }
+	| expression[left] AND expression[right]					{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, AND_EXPRESSION); }
+	| expression[left] OR expression[right]					{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, OR_EXPRESSION); }
+	| NOT expression											{ $$ = UnaryExpressionSemanticAction(@$.first_line, $2, NOT_EXPRESSION); }
 	/**
 	 * "radius <r> of <center>" denotes the collection of units within
 	 * distance "r" of "center" (e.g., used as "for (victim in radius 5 of
@@ -471,21 +471,21 @@ expression: expression[left] ADD expression[right]			{ $$ = BinaryExpressionSema
 	 * continuation at the same point, since "expression" is shared by all of
 	 * them.
 	 */
-	| RADIUS expression OF expression[center] %prec RADIUS		{ $$ = RadiusExpressionSemanticAction($2, $center); }
-	| expression[object] DOT ID								{ $$ = MemberExpressionSemanticAction($object, $3); }
+	| RADIUS expression OF expression[center] %prec RADIUS		{ $$ = RadiusExpressionSemanticAction(@$.first_line, $2, $center); }
+	| expression[object] DOT ID								{ $$ = MemberExpressionSemanticAction(@$.first_line, $object, $3); }
 	| OPEN_PARENTHESIS expression[inner] CLOSE_PARENTHESIS	{ $$ = ParenthesizedExpressionSemanticAction($inner); }
-	| DICE														{ $$ = DiceExpressionSemanticAction($1); }
-	| INTEGER													{ $$ = IntegerExpressionSemanticAction($1); }
-	| STRING													{ $$ = StringExpressionSemanticAction($1); }
-	| TRUE														{ $$ = BooleanExpressionSemanticAction(true); }
-	| FALSE														{ $$ = BooleanExpressionSemanticAction(false); }
+	| DICE														{ $$ = DiceExpressionSemanticAction(@$.first_line, $1); }
+	| INTEGER													{ $$ = IntegerExpressionSemanticAction(@$.first_line, $1); }
+	| STRING													{ $$ = StringExpressionSemanticAction(@$.first_line, $1); }
+	| TRUE														{ $$ = BooleanExpressionSemanticAction(@$.first_line, true); }
+	| FALSE														{ $$ = BooleanExpressionSemanticAction(@$.first_line, false); }
 	/**
 	 * A single "ID callSuffix" rule (instead of two overlapping alternatives,
 	 * "ID" and "ID OPEN_PARENTHESIS argumentList CLOSE_PARENTHESIS") avoids a
 	 * shift/reduce conflict: "callSuffix" alone, deterministically, decides
 	 * from the OPEN_PARENTHESIS lookahead whether this is a call.
 	 */
-	| ID callSuffix												{ $$ = IdOrCallExpressionSemanticAction($ID, $callSuffix); }
+	| ID callSuffix												{ $$ = IdOrCallExpressionSemanticAction(@$.first_line, $ID, $callSuffix); }
 	;
 
 callSuffix: OPEN_PARENTHESIS argumentList CLOSE_PARENTHESIS	{ $$ = CallSuffixSemanticAction($argumentList); }

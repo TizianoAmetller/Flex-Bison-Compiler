@@ -68,7 +68,9 @@ typedef enum {
 
 /**
  * The definition of a logger. It contains a name to see its traces, and a
- * logging level that defines when the logs must be visible.
+ * logging level that defines when the logs must be visible. Every level is
+ * written to the standard error, which leaves the standard output free for the
+ * output of the compiled program.
 */
 typedef struct {
 	LoggingLevel loggingLevel;

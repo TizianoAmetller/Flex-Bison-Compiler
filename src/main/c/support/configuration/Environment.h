@@ -10,7 +10,7 @@
  * "true"; false otherwise. The default value is only used when the variable
  * is undefined.
  */
-const bool getBooleanOrDefault(const char * name, const bool defaultValue);
+bool getBooleanOrDefault(const char * name, const bool defaultValue);
 
 /**
  * Gets the value of an environment variable by name, or returns a default

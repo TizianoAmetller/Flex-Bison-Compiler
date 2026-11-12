@@ -258,6 +258,7 @@ A value that is missing or not valid is a usage error (exit status 100). The exi
 | `use` inside `use` | 32 | The simulation fails |
 | Statements nested (`if`, `while`, `for` and bodies inside one another, counted through every `use` in the chain) | 1000 | The simulation fails |
 | Nesting of an expression | 2000 | The simulation fails |
+| Nesting of an expression when the program is read (`1+1+...+1`, `a.b.c...`) | 10000 | The program is rejected (exit status 1) |
 
 A team that has no units when the battle starts (for example, a quantity that rolls 0) also fails the simulation.
 

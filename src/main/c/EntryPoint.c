@@ -121,10 +121,12 @@ static bool _parseArguments(const int length, const char ** arguments, CompilerS
 /**
  * Simulates the battle and writes it to the standard output, as text or as an
  * HTML page, even if the simulation fails halfway: what happened until then is
- * shown.
+ * shown. If everything went well but the output could not be written (for
+ * example, the disk is full), that is an error too: UNKNOWN_ERROR, with its reason.
  */
 static CompilationStatus _simulate(CompilerState * compilerState, const Logger * logger) {
 	CompilationStatus status = executeSimulation(compilerState);
+	errno = 0;
 	if (compilerState->trace != NULL) {
 		const bool written = (compilerState->format == FORMAT_HTML)
 			? generateHtml(compilerState->trace, stdout)
@@ -133,9 +135,14 @@ static CompilationStatus _simulate(CompilerState * compilerState, const Logger *
 			status = OUT_OF_MEMORY;
 		}
 	}
-	fflush(stdout);
+	const bool flushed = (fflush(stdout) == 0);
+	const int writeError = errno;
 	if (status != SUCCEEDED) {
 		logError(logger, "The simulation was aborted by an error.");
+	}
+	else if (!flushed || ferror(stdout)) {
+		logError(logger, "The output could not be written: %s", (writeError != 0) ? strerror(writeError) : "unknown error");
+		status = UNKNOWN_ERROR;
 	}
 	return status;
 }
@@ -149,8 +156,8 @@ static CompilationStatus _simulate(CompilerState * compilerState, const Logger *
  *	Once the program is accepted (syntactic analysis) and validated (semantic
  *	analysis), the battle it declares is simulated, and what tells it (a text,
  *	or an HTML page that replays it) goes to the standard output. The exit status is 0 if the battle ends, 1 if
- *	the program is rejected, 100 if the command line is invalid and 101 if the
- *	simulation fails.
+ *	the program is rejected, 3 if the output cannot be written, 100 if the
+ *	command line is invalid and 101 if the simulation fails.
  */
 int main(const int length, const char ** arguments) {
 	LexicalAnalyzer * lexicalAnalyzer = createLexicalAnalyzer();

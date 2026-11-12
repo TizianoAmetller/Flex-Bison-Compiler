@@ -7,14 +7,14 @@
 A compiler for a custom DSL that simulates turn-based RPG combat (units, abilities, teams, a battlefield and battles), developed in C with Flex and Bison. The project now covers the whole pipeline: lexical and syntactic analysis, semantic analysis, simulation of the battles, and generation of their text and of an HTML replay with metrics.
 
 * [Quick start](#quick-start)
-* [Stage 2 Scope](#stage-2-scope)
+* [Scope](#scope)
 * [Language Overview](#language-overview)
 * [Semantic analysis](#semantic-analysis)
 * [Simulation](#simulation)
 * [Requirements](#requirements)
 * [Configuration](#configuration)
 * [Commands](#commands)
-* [Tests](#tests)
+* [Tests](#tests-2)
 * [Documentation](#documentation)
 * [CI/CD](#cicd)
 * [Notes](#notes)
@@ -32,14 +32,17 @@ src/main/bash/test.sh  # the tests
 
 `LOGGING_LEVEL=ERROR` is there because under Docker Compose the default level is `ALL`, which writes thousands of debug lines to the standard error (the standard output stays clean either way).
 
-## Stage 2 Scope
+## Scope
 
-This deliverable implements:
+This project implements:
 
 * lexical analysis with Flex
 * syntactic analysis with Bison, with no shift/reduce or reduce/reduce conflicts
 * AST construction for every accepted program
-* accept/reject tests, one language feature per test
+* semantic analysis, of the structure of a program and of the bodies of its abilities, effects and `on turn` declarations
+* simulation of the battle of a valid program
+* generation of the output of a battle, as text and as an HTML replay with metrics
+* tests of every phase (syntactic, semantic, simulation, HTML and examples), one language feature per test
 
 The semantic analysis checks the structure of a program (for example: that the units a team lists were declared, that a battle has at least two teams, that positions fit inside the arena) and the bodies of its abilities, effects and `on turn` declarations. It is described in [Semantic analysis](#semantic-analysis).
 
@@ -121,7 +124,7 @@ The language changed while the frontend was being built, largely following the f
 
 The biggest addition is space. Units can have positions, an `arena` sets the size of the field, units can `move`, and `radius 5 of target` selects everything around a point, which is what area-of-effect abilities need. A team can also hold a whole mass of identical units (`Archer * 20`), scattered `around` a point, next to individually placed heroes. The quantity can be random too (`Goblin * 2d6`).
 
-What is still open for Stage III: variables and assignment, and ability costs and cooldowns.
+Not in the language: variables and assignment, and ability costs and cooldowns (see [Known limitations](#known-limitations)).
 
 ## Semantic analysis
 
@@ -138,7 +141,7 @@ What it validates:
 * **Arena.** At most one, with a constant width and height greater than 0 and no dice.
 * **Positions** (of units and of team members) are constant, and inside the arena when there is one (`0 <= x < width` and `0 <= y < height`).
 
-A constant expression is made of `int` literals, dice and `+ - * /`, computed with 64 bits, and an overflow or a division by zero is an error. Anything else in those places is rejected. Dice are accepted, but they have no value to check yet, so a quantity or a position with dice is not range-checked.
+A constant expression is made of `int` literals, dice and `+ - * /`, computed with 64 bits, and an overflow or a division by zero is an error. Anything else in those places is rejected. Dice are accepted, but their value is only known when the battle runs, so a quantity or a position with dice is not range-checked.
 
 A program with no `battle` is valid: it exits with `0` and warns "no battle declared: nothing to simulate".
 
@@ -239,8 +242,9 @@ The random numbers come from SplitMix64, written in the compiler (not from the C
 | `--format F`      | The output on the standard output: `text` (the default) or `html` (see [HTML replay](#html-replay)). |
 | `--check`         | Parses and validates the program and does nothing else (it generates no output, whatever the format). |
 | `--syntax-only`   | Stops after the syntactic analysis. |
+| `--help`, `-h`    | Writes the usage and the options to the standard error (never to the standard output), and exits with status 0. |
 
-A value that is missing or not valid is a usage error (exit status 100). The exit status is `0` when the program is accepted and the battle ends (a draw is a way to end), `1` when the program is rejected, `100` when the command line is invalid and `101` when the simulation fails. A failed simulation reports `simulation error: ...` on the standard error and still writes what happened until then, in the format that was asked for (in `html`, the page also has the error, in a red banner). The logs never go to the standard output.
+A value that is missing or not valid is a usage error (exit status 100). The exit status is `0` when the program is accepted and the battle ends (a draw is a way to end), `1` when the program is rejected, `3` when the output cannot be written (for example, the disk is full), `100` when the command line is invalid and `101` when the simulation fails. A failed simulation reports `simulation error: ...` on the standard error and still writes what happened until then, in the format that was asked for (in `html`, the page also has the error, in a red banner). The logs never go to the standard output.
 
 ### Limits
 
@@ -312,7 +316,7 @@ A unit is `[id, name, team, declaration, x, y, health, maxHealth, attack, defens
 
 **Safety.** Everything that the program writes (names, tags, the messages of `log`) is data, and it can't run: the generator writes `<`, `>`, `&`, the line and paragraph separators (U+2028 and U+2029) and the control characters as `\uXXXX` and every byte that is not valid UTF-8 as U+FFFD, so no text can close the `<script>`, and the page puts all of it on the screen as text, never as HTML. The page also carries a content security policy that allows no network access, no frames and no scripts or styles other than its own (`default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:`).
 
-**Size.** The page takes about 80 KB plus about 40 bytes for each event: a battle of 500 against 500 is about 0.5 MB, and the limit of events (500000) keeps any page under 20 MB. The player was checked with 10000 units and 125000 events: it loads in under 0.2 seconds, computes its metrics in about 40 milliseconds and keeps 60 frames per second.
+**Size.** The page takes about 80 KB plus about 40 bytes for each event: a battle of 500 against 500 is about 0.5 MB, and the limit of events (500000) keeps any page under 20 MB. The player was measured in headless Chromium, without a GPU and on two CPU cores: a page with 10000 units and 125000 events loads in about 0.3 seconds, computes its metrics in under 10 milliseconds and plays at about 15 frames per second, while a battle of 1000 units plays at 60 frames per second.
 
 ### Metrics
 
@@ -355,12 +359,14 @@ The abilities have no range in the language, so the examples ask for the units a
 ### Known limitations
 
 * The abilities have no range: a unit hits its `nearest` no matter how far it is. Where the units are matters through the areas of `radius`.
+* The language has no variables or assignment, and an ability has no cost or cooldown: a unit can use its abilities as often as its `on turn` says.
 * A body runs to its end even if the unit that runs it dies halfway.
 * The cost grows with the square of the number of units (`nearest`, `allies` and `enemies` go over all of them): a battle of 5000 against 5000 takes about 11 seconds with the sanitizers on.
 * There is no timeout on the clock: a battle inside all the limits can still take long.
 * `deal` and `heal` tell the amount that was evaluated, not the effective one: `heals 5 (health 10/10)` can be a heal of 3.
 * Numbers above 2^53 are shown with lost precision in the HTML replay and in its metrics, because JavaScript has no exact integers beyond that (the engine works with 64 bits).
 * A byte order mark (BOM, the bytes `EF BB BF`) at the start of the file is not accepted: it is an unrecognized character, like any other that is not ASCII outside a string or a comment.
+* `--max-rounds` does not make room for the events: a battle fails with the limit of events (500000, exit status 101) as soon as its rounds have written that many, which can happen long before the limit of rounds if each round writes several events (two units that hit each other fail after about 100000 rounds, five events each).
 
 ### Tests
 
@@ -415,7 +421,7 @@ Compiles a program:
 src/main/bash/run.sh <program> [options]
 ```
 
-where `<program>` is the path to the file that represents its entry-point. The options after it are forwarded to the compiler: `--syntax-only`, `--check`, `--seed N`, `--max-rounds N` and `--format text|html` (see [Simulation](#simulation)). A valid program with a `battle` is simulated, and the battle is written to the standard output, as text or, with `--format html`, as a page that replays it (`run.sh battle.rpg --format html > battle.html`, see [HTML replay](#html-replay)). The exit status is `0` when the program is accepted and its battle ends, `1` when it is rejected, `100` when the command line is invalid (for example, an unknown option) and `101` when the simulation fails, and a syntax error reports its line. Every log goes to the standard error, so the standard output is reserved for the output of the compiled program. To watch the AST being built, run with `LOGGING_LEVEL=DEBUGGING`: the semantic actions log themselves in the order they build it.
+where `<program>` is the path to the file that represents its entry-point. The options after it are forwarded to the compiler: `--syntax-only`, `--check`, `--seed N`, `--max-rounds N`, `--format text|html` and `--help` (see [Simulation](#simulation)). A valid program with a `battle` is simulated, and the battle is written to the standard output, as text or, with `--format html`, as a page that replays it (`run.sh battle.rpg --format html > battle.html`, see [HTML replay](#html-replay)). The exit status is `0` when the program is accepted and its battle ends, `1` when it is rejected, `3` when the output cannot be written, `100` when the command line is invalid (for example, an unknown option) and `101` when the simulation fails, and a syntax error reports its line. Every log goes to the standard error, so the standard output is reserved for the output of the compiled program. To watch the AST being built, run with `LOGGING_LEVEL=DEBUGGING`: the semantic actions log themselves in the order they build it.
 
 ### Test
 
@@ -447,7 +453,7 @@ The tests have eight categories, seven of them under `src/test/c` and the last o
 
 Each test is as small as possible and covers a single feature, and a few of the rejections pin down restrictions that are intentional (for example, `around` only goes with a quantity, and `at` only without one). A few larger programs show the features working together.
 
-`test.sh` runs the `accept` and `reject` programs with `--syntax-only`, the semantic ones with `--check`, the simulation ones with `--seed 1`, the `html` ones with `--seed 1 --format html`, and the examples with `--seed 1` in both formats. It requires the exact exit status: `0` for the `accept` categories, `simulation` and `html` (except the `html` programs that have a `.stderr` file, which are `101`), `1` for the `reject` ones and `101` for `simulation-reject`. It runs the compiler at the `WARNING` logging level, so that the standard error is the same everywhere. The build links AddressSanitizer and UndefinedBehaviorSanitizer, and a test also fails when its standard error holds a sanitizer report, so a crash can't pass as a rejection.
+`test.sh` runs the `accept` and `reject` programs with `--syntax-only` (and if one has an `NN-name.stderr` file, the messages of the parser must be those of the file, which is exhaustive as in `semantic-reject`), the semantic ones with `--check`, the simulation ones with `--seed 1`, the `html` ones with `--seed 1 --format html`, and the examples with `--seed 1` in both formats. It requires the exact exit status: `0` for the `accept` categories, `simulation` and `html` (except the `html` programs that have a `.stderr` file, which are `101`), `1` for the `reject` ones and `101` for `simulation-reject`. It runs the compiler at the `WARNING` logging level, so that the standard error is the same everywhere. The build links AddressSanitizer and UndefinedBehaviorSanitizer, and a test also fails when its standard error holds a sanitizer report, so a crash can't pass as a rejection.
 
 ## Documentation
 
@@ -467,7 +473,7 @@ _GitHub Actions_ is disabled by default on a new repository. To run the `pipelin
 
 ## Notes
 
-This repository is currently 3 commits behind `Alpha-Theta-Gamma-Mu/Flex-Bison-Compiler:development` (the base template). We reviewed them: one commit (`694d39a`, 2026-09-26) independently fixes the same bug we found and fixed ourselves in `UnknownLexemeAction` (it wasn't calling `pushToken`, so an invalid lexeme could leave already-built AST fragments unreleased); the other two (`d2014d3`, `e329b9c`, 2026-09-09) are testing-script, CI and Docker/CMake portability improvements. We chose not to merge them at this stage to avoid integration risk close to the delivery; this can be revisited for Stage III.
+This repository is currently 5 commits behind `Alpha-Theta-Gamma-Mu/Flex-Bison-Compiler:development` (the base template). We reviewed them: one commit (`694d39a`, 2026-09-26) independently fixes the same bug we found and fixed ourselves in `UnknownLexemeAction` (it wasn't calling `pushToken`, so an invalid lexeme could leave already-built AST fragments unreleased); two (`d2014d3`, `e329b9c`, 2026-09-09) are testing-script, CI and Docker/CMake portability improvements; one (`15ef912`, 2026-10-02) starts the location of the scanner at 1:1-1:1, defines how the location of a grammar rule is made from the ones of its symbols, adds the location to the debug log of each token, and adds hooks (empty by default) that the scanner and the parser call on every action; and one (`7edbac8`, 2026-10-23) sets up debugging with GDB (`gdb` and `gdbserver` in the Docker image, a port of the container, a `debug.sh` script and a VS Code launch configuration) and builds with `-g -O0` instead of `-O3`. We chose not to merge them, to avoid integration risk close to the delivery; the two newest are not merged either because the code is frozen for the delivery and nothing in our build depends on them.
 
 ## Recommended Extensions
 

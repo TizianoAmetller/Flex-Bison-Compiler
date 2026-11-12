@@ -28,9 +28,14 @@ ModuleDestructor initializeFlexActionsModule(LexicalAnalyzer * lexicalAnalyzer) 
 static void _logTokenAction(const char * actionName, Token * token);
 
 /**
- * Logs a lexical-analyzer action over a token in DEBUGGING level.
+ * Logs a lexical-analyzer action over a token in DEBUGGING level. The lexeme is
+ * escaped only if that level is enabled: it can be very long, and nobody would
+ * see the message anyway.
  */
 static void _logTokenAction(const char * actionName, Token * token) {
+	if (!isLoggingLevelEnabled(_logger, DEBUGGING)) {
+		return;
+	}
 	char * _lexeme = escape(token->lexeme);
 	logDebugging(_logger, WARNING_COLOR "%s" DEFAULT_COLOR ": Token(context=%d, label=%d, length=%d, lexeme=%s\"%s\"%s, line=%d, semanticValue=%p)",
 		actionName,

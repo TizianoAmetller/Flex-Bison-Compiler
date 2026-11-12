@@ -4,6 +4,7 @@
 #include "../configuration/Environment.h"
 #include "../language/String.h"
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -87,6 +88,13 @@ Logger * createLogger(char * name);
  * Destroy a logger and its resources.
  */
 void destroyLogger(Logger * logger);
+
+/**
+ * Tells whether a message of the specified level would be written by this
+ * logger. It lets the caller skip the work of building a message that nobody
+ * will see.
+ */
+bool isLoggingLevelEnabled(const Logger * logger, const LoggingLevel loggingLevel);
 
 /** Logs at CRITICAL level. */
 void logCritical(const Logger * logger, const char * const format, ...);

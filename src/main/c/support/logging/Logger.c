@@ -82,6 +82,10 @@ void destroyLogger(Logger * logger) {
 	}
 }
 
+bool isLoggingLevelEnabled(const Logger * logger, const LoggingLevel loggingLevel) {
+	return logger->loggingLevel <= loggingLevel;
+}
+
 void logCritical(const Logger * logger, const char * const format, ...) {
 	va_list arguments;
 	va_start(arguments, format);

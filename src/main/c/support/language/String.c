@@ -70,26 +70,27 @@ char * concatenate(const unsigned int count, ...) {
 }
 
 char * escape(const char * string) {
-	unsigned int length = 1;
-	for (unsigned int k = 0; 0 < string[k]; ++k) {
-		if (iscntrl(string[k])) {
-			length += strlen(_controlCharacterToEscapedString(string[k]));
-		}
-		else {
-			length += 1;
-		}
+	/** The bytes are read as unsigned, so the ones from 0x80 on are not controls and pass as they are. */
+	size_t length = 1;
+	for (const unsigned char * character = (const unsigned char *) string; *character != '\0'; ++character) {
+		const char * escaped = _controlCharacterToEscapedString((char) *character);
+		length += (escaped != NULL) ? strlen(escaped) : 1;
 	}
 	char * escapedString = calloc(length, sizeof(char));
-	char charToString[2] = { 0, 0 };
-	for (unsigned int k = 0; 0 < string[k]; ++k) {
-		if (iscntrl(string[k])) {
-			strcat(escapedString, _controlCharacterToEscapedString(string[k]));
+	char * end = escapedString;
+	for (const unsigned char * character = (const unsigned char *) string; *character != '\0'; ++character) {
+		const char * escaped = _controlCharacterToEscapedString((char) *character);
+		if (escaped != NULL) {
+			const size_t escapedLength = strlen(escaped);
+			memcpy(end, escaped, escapedLength);
+			end += escapedLength;
 		}
 		else {
-			charToString[0] = string[k];
-			strcat(escapedString, charToString);
+			*end = (char) *character;
+			++end;
 		}
 	}
+	*end = '\0';
 	return escapedString;
 }
 

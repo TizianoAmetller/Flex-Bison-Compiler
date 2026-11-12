@@ -18,7 +18,8 @@ char * concatenate(const unsigned int count, ...);
 /**
  * Creates a new string (using heap-memory), that is equal to the original,
  * but using escaped sequences for every control character (i.e., in the range
- * 0x00-0x1F and 0x7F).
+ * 0x00-0x1F and 0x7F). The bytes from 0x80 on are not controls: they are copied
+ * as they are. It takes a time proportional to the length of the string.
  */
 char * escape(const char * string);
 

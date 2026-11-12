@@ -215,6 +215,12 @@ struct Expression {
 	ExpressionType type;
 	/** The 1-based source line where this expression starts (its first token). */
 	int line;
+	/**
+	 * How deep the tree that starts at this expression is: 1 for a literal or a
+	 * name, and 1 more than the deepest of its children for anything else. The
+	 * parser sets it and never lets it go over its limit (see BisonActions.c).
+	 */
+	int depth;
 };
 
 /** deal <amount> to <target> */

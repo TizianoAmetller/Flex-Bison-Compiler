@@ -14,6 +14,19 @@ void yyerror(const YYLTYPE * location, const char * message) {
 	SyntacticErrorSemanticAction(location, message);
 }
 
+/**
+ * The actions that build an expression return NULL, after reporting it, when the
+ * expression is too deep (see BisonActions.c): the parse is aborted then.
+ *
+ * @see https://www.gnu.org/software/bison/manual/html_node/Action-Features.html
+ */
+#define ABORT_IF_NULL(value) \
+	do { \
+		if ((value) == NULL) { \
+			YYABORT; \
+		} \
+	} while (0)
+
 %}
 
 // You touch this, and you die.
@@ -439,19 +452,19 @@ statement: DEAL expression TO expression						{ $$ = DealStatementSemanticAction
  * Bison reports as an unresolved shift/reduce conflict.
  */
 
-expression: expression[left] ADD expression[right]			{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, ADD_EXPRESSION); }
-	| expression[left] SUB expression[right]					{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, SUB_EXPRESSION); }
-	| expression[left] MUL expression[right]					{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, MUL_EXPRESSION); }
-	| expression[left] DIV expression[right]					{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, DIV_EXPRESSION); }
-	| expression[left] EQUALS expression[right]				{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, EQUALS_EXPRESSION); }
-	| expression[left] NOT_EQUALS expression[right]			{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, NOT_EQUALS_EXPRESSION); }
-	| expression[left] LESS_THAN expression[right]				{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, LESS_THAN_EXPRESSION); }
-	| expression[left] GREATER_THAN expression[right]			{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, GREATER_THAN_EXPRESSION); }
-	| expression[left] LESS_EQUAL expression[right]			{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, LESS_EQUAL_EXPRESSION); }
-	| expression[left] GREATER_EQUAL expression[right]			{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, GREATER_EQUAL_EXPRESSION); }
-	| expression[left] AND expression[right]					{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, AND_EXPRESSION); }
-	| expression[left] OR expression[right]					{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, OR_EXPRESSION); }
-	| NOT expression											{ $$ = UnaryExpressionSemanticAction(@$.first_line, $2, NOT_EXPRESSION); }
+expression: expression[left] ADD expression[right]			{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, ADD_EXPRESSION); ABORT_IF_NULL($$); }
+	| expression[left] SUB expression[right]					{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, SUB_EXPRESSION); ABORT_IF_NULL($$); }
+	| expression[left] MUL expression[right]					{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, MUL_EXPRESSION); ABORT_IF_NULL($$); }
+	| expression[left] DIV expression[right]					{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, DIV_EXPRESSION); ABORT_IF_NULL($$); }
+	| expression[left] EQUALS expression[right]				{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, EQUALS_EXPRESSION); ABORT_IF_NULL($$); }
+	| expression[left] NOT_EQUALS expression[right]			{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, NOT_EQUALS_EXPRESSION); ABORT_IF_NULL($$); }
+	| expression[left] LESS_THAN expression[right]				{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, LESS_THAN_EXPRESSION); ABORT_IF_NULL($$); }
+	| expression[left] GREATER_THAN expression[right]			{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, GREATER_THAN_EXPRESSION); ABORT_IF_NULL($$); }
+	| expression[left] LESS_EQUAL expression[right]			{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, LESS_EQUAL_EXPRESSION); ABORT_IF_NULL($$); }
+	| expression[left] GREATER_EQUAL expression[right]			{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, GREATER_EQUAL_EXPRESSION); ABORT_IF_NULL($$); }
+	| expression[left] AND expression[right]					{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, AND_EXPRESSION); ABORT_IF_NULL($$); }
+	| expression[left] OR expression[right]					{ $$ = BinaryExpressionSemanticAction(@$.first_line, $left, $right, OR_EXPRESSION); ABORT_IF_NULL($$); }
+	| NOT expression											{ $$ = UnaryExpressionSemanticAction(@$.first_line, $2, NOT_EXPRESSION); ABORT_IF_NULL($$); }
 	/**
 	 * "radius <r> of <center>" denotes the collection of units within
 	 * distance "r" of "center" (e.g., used as "for (victim in radius 5 of
@@ -471,8 +484,8 @@ expression: expression[left] ADD expression[right]			{ $$ = BinaryExpressionSema
 	 * continuation at the same point, since "expression" is shared by all of
 	 * them.
 	 */
-	| RADIUS expression OF expression[center] %prec RADIUS		{ $$ = RadiusExpressionSemanticAction(@$.first_line, $2, $center); }
-	| expression[object] DOT ID								{ $$ = MemberExpressionSemanticAction(@$.first_line, $object, $3); }
+	| RADIUS expression OF expression[center] %prec RADIUS		{ $$ = RadiusExpressionSemanticAction(@$.first_line, $2, $center); ABORT_IF_NULL($$); }
+	| expression[object] DOT ID								{ $$ = MemberExpressionSemanticAction(@$.first_line, $object, $3); ABORT_IF_NULL($$); }
 	| OPEN_PARENTHESIS expression[inner] CLOSE_PARENTHESIS	{ $$ = ParenthesizedExpressionSemanticAction($inner); }
 	| DICE														{ $$ = DiceExpressionSemanticAction(@$.first_line, $1); }
 	| INTEGER													{ $$ = IntegerExpressionSemanticAction(@$.first_line, $1); }
@@ -485,7 +498,7 @@ expression: expression[left] ADD expression[right]			{ $$ = BinaryExpressionSema
 	 * shift/reduce conflict: "callSuffix" alone, deterministically, decides
 	 * from the OPEN_PARENTHESIS lookahead whether this is a call.
 	 */
-	| ID callSuffix												{ $$ = IdOrCallExpressionSemanticAction(@$.first_line, $ID, $callSuffix); }
+	| ID callSuffix												{ $$ = IdOrCallExpressionSemanticAction(@$.first_line, $ID, $callSuffix); ABORT_IF_NULL($$); }
 	;
 
 callSuffix: OPEN_PARENTHESIS argumentList CLOSE_PARENTHESIS	{ $$ = CallSuffixSemanticAction($argumentList); }

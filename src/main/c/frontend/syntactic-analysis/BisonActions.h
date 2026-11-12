@@ -68,7 +68,11 @@ Statement * IfStatementSemanticAction(const int line, Expression * condition, St
 Statement * ForStatementSemanticAction(const int line, char * iterator, Expression * collection, StatementList * body);
 Statement * WhileStatementSemanticAction(const int line, Expression * condition, StatementList * body);
 
-/** Expressions. */
+/**
+ * Expressions. The ones that build a node out of other expressions (every one but the
+ * literals, the names and the parentheses) return NULL, after reporting the error
+ * and releasing what they were given, if the expression is too deep.
+ */
 Expression * BinaryExpressionSemanticAction(const int line, Expression * leftExpression, Expression * rightExpression, ExpressionType type);
 Expression * UnaryExpressionSemanticAction(const int line, Expression * operand, ExpressionType type);
 Expression * MemberExpressionSemanticAction(const int line, Expression * object, char * member);

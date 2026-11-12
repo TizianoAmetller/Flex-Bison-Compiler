@@ -1,4 +1,27 @@
 #include "BisonActions.h"
+#include "../../backend/simulation/SimulationLimits.h"
+
+/**
+ * The deepest an expression can be when the parser builds it, counting its
+ * levels (a literal is 1, a sum of n terms is n, and "self.a.b" is 3). A program
+ * with a deeper one is rejected as soon as it is read, and the rest of it is not
+ * even looked at.
+ *
+ * This protects every piece of code that goes over an expression recursively
+ * ("destroyExpression", the type check of the semantic analyzer, the constant
+ * evaluator...), and none of them is rewritten for that: a long chain of "+",
+ * "and" or ".member" is a deep tree on the left, which the stack of Bison does
+ * not limit, and each of them used to overflow the stack of the process with
+ * 120000 to 300000 terms. The limit is 10000 to be 10 times under the lowest
+ * of those, and over the limit of the simulation (MAX_EXPRESSION_DEPTH), so that
+ * one of 2000 to 10000 levels is still a valid program, which the simulation
+ * then refuses with its own message. The nesting to the right ("not not ...",
+ * parentheses, blocks) is limited by the stack of Bison, which goes up to about
+ * 10000 levels too.
+ */
+#define MAX_PARSE_EXPRESSION_DEPTH 10000
+
+_Static_assert(MAX_EXPRESSION_DEPTH < MAX_PARSE_EXPRESSION_DEPTH, "the limit of the parser has to be over the one of the simulation");
 
 /* MODULE INTERNAL STATE */
 
@@ -26,12 +49,47 @@ ModuleDestructor initializeBisonActionsModule(CompilerState * compilerState) {
 /* PRIVATE FUNCTIONS */
 
 static void _logSyntacticAnalyzerAction(const char * functionName);
+static int _deepest(const int first, const int second);
+static int _deepestArgument(const ExpressionList * arguments);
+static Expression * _setDepth(Expression * expression, const int deepestChild);
 
 /**
  * Logs a syntactic-analyzer action in DEBUGGING level.
  */
 static void _logSyntacticAnalyzerAction(const char * functionName) {
 	logDebugging(_logger, "%s", functionName);
+}
+
+static int _deepest(const int first, const int second) {
+	return (first < second) ? second : first;
+}
+
+/**
+ * The depth of the deepest of the arguments of a call, or 0 if it has none.
+ */
+static int _deepestArgument(const ExpressionList * arguments) {
+	int deepest = 0;
+	for (const ExpressionList * argument = arguments; argument != NULL; argument = argument->next) {
+		deepest = _deepest(deepest, argument->expression->depth);
+	}
+	return deepest;
+}
+
+/**
+ * Gives its depth to an expression that was just built (one more than its
+ * deepest child) and checks it against the limit. If the expression is too deep
+ * it is destroyed, with everything it has (at most MAX_PARSE_EXPRESSION_DEPTH
+ * levels, which are safe to go over), the error is reported and NULL is returned,
+ * and the grammar aborts the parse.
+ */
+static Expression * _setDepth(Expression * expression, const int deepestChild) {
+	expression->depth = deepestChild + 1;
+	if (MAX_PARSE_EXPRESSION_DEPTH < expression->depth) {
+		logError(_logger, "line %d: the expression is nested too deep (the limit is %d)", expression->line, MAX_PARSE_EXPRESSION_DEPTH);
+		destroyExpression(expression);
+		return NULL;
+	}
+	return expression;
 }
 
 /* PUBLIC FUNCTIONS */
@@ -418,7 +476,7 @@ Expression * BinaryExpressionSemanticAction(const int line, Expression * leftExp
 	expression->rightExpression = rightExpression;
 	expression->type = type;
 	expression->line = line;
-	return expression;
+	return _setDepth(expression, _deepest(leftExpression->depth, rightExpression->depth));
 }
 
 Expression * UnaryExpressionSemanticAction(const int line, Expression * operand, ExpressionType type) {
@@ -427,7 +485,7 @@ Expression * UnaryExpressionSemanticAction(const int line, Expression * operand,
 	expression->operand = operand;
 	expression->type = type;
 	expression->line = line;
-	return expression;
+	return _setDepth(expression, operand->depth);
 }
 
 Expression * MemberExpressionSemanticAction(const int line, Expression * object, char * member) {
@@ -437,7 +495,7 @@ Expression * MemberExpressionSemanticAction(const int line, Expression * object,
 	expression->member = member;
 	expression->type = MEMBER_EXPRESSION;
 	expression->line = line;
-	return expression;
+	return _setDepth(expression, object->depth);
 }
 
 Expression * CallExpressionSemanticAction(const int line, char * functionName, ExpressionList * arguments) {
@@ -447,7 +505,7 @@ Expression * CallExpressionSemanticAction(const int line, char * functionName, E
 	expression->arguments = arguments;
 	expression->type = CALL_EXPRESSION;
 	expression->line = line;
-	return expression;
+	return _setDepth(expression, _deepestArgument(arguments));
 }
 
 /**
@@ -498,7 +556,7 @@ Expression * RadiusExpressionSemanticAction(const int line, Expression * radius,
 	expression->center = center;
 	expression->type = RADIUS_EXPRESSION;
 	expression->line = line;
-	return expression;
+	return _setDepth(expression, _deepest(radius->depth, center->depth));
 }
 
 Expression * DiceExpressionSemanticAction(const int line, const DiceValue dice) {
@@ -507,6 +565,7 @@ Expression * DiceExpressionSemanticAction(const int line, const DiceValue dice) 
 	expression->dice = dice;
 	expression->type = DICE_EXPRESSION;
 	expression->line = line;
+	expression->depth = 1;
 	return expression;
 }
 
@@ -516,6 +575,7 @@ Expression * IntegerExpressionSemanticAction(const int line, const int value) {
 	expression->integerValue = value;
 	expression->type = INTEGER_EXPRESSION;
 	expression->line = line;
+	expression->depth = 1;
 	return expression;
 }
 
@@ -525,6 +585,7 @@ Expression * BooleanExpressionSemanticAction(const int line, const bool value) {
 	expression->booleanValue = value;
 	expression->type = BOOLEAN_EXPRESSION;
 	expression->line = line;
+	expression->depth = 1;
 	return expression;
 }
 
@@ -534,6 +595,7 @@ Expression * StringExpressionSemanticAction(const int line, char * text) {
 	expression->text = text;
 	expression->type = STRING_EXPRESSION;
 	expression->line = line;
+	expression->depth = 1;
 	return expression;
 }
 
@@ -543,6 +605,7 @@ Expression * IdentifierExpressionSemanticAction(const int line, char * text) {
 	expression->text = text;
 	expression->type = IDENTIFIER_EXPRESSION;
 	expression->line = line;
+	expression->depth = 1;
 	return expression;
 }
 

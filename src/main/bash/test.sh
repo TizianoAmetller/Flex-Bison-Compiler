@@ -86,7 +86,10 @@ fail() {
 
 # Runs the compiler (syntax only) over every program in a folder, and expects
 # its exit status to be exactly the given one and its standard error to hold
-# no sanitizer report.
+# no sanitizer report. If a program has an "NN-name.stderr" file next to it, the
+# messages of the parser must be those of the file, which is exhaustive: each
+# non-empty line must be in the standard error, and the lines of the parser in
+# it must be as many as those.
 #
 # Arguments: folder, expected status, and the status of the opposite outcome
 # with the words that describe it.
@@ -96,11 +99,17 @@ check_syntax() {
 	local opposite="$3"
 	local oppositeMessage="$4"
 	local file
+	local problem
 	for file in "$folder"/*; do
 		[ -f "$file" ] || continue
+		is_companion "$file" && continue
 		run_compiler "$file" --syntax-only
+		problem=""
+		[ -f "$file.stderr" ] && problem="$(exhaustive_messages_problem "$file.stderr" 'BisonActions')"
 		if has_sanitizer_report; then
 			fail "$(basename "$file")" "there is a sanitizer report"
+		elif [ "$RESULT" == "$expected" ] && [ -n "$problem" ]; then
+			fail "$(basename "$file")" "$problem"
 		elif [ "$RESULT" == "$expected" ]; then
 			pass "$(basename "$file")"
 		elif [ "$RESULT" == "$opposite" ]; then

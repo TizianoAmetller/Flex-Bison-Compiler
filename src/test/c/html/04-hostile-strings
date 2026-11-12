@@ -1,0 +1,14 @@
+unit Hero { health: 10, attack: 1, defense: 0, speed: 5 }
+unit Foe { health: 10, attack: 1, defense: 0, speed: 1 }
+
+on turn Hero {
+	log "</script><b>x</b>"
+	log "it's a 'quote' and a back\slash and two \\ and \u0041 and \n"
+	log "tab:	here & ampersand <!-- comment --> <img src=x onerror=alert(1)>"
+	log "valid UTF-8: café 漢字 and a line separator:  end"
+}
+
+party Heroes = [Hero]
+encounter Foes = [Foe]
+
+battle: [Heroes, Foes]

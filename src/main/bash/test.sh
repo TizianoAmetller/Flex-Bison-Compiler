@@ -29,7 +29,8 @@ SANITIZER_PATTERN='AddressSanitizer|LeakSanitizer|UndefinedBehaviorSanitizer|[0-
 STDOUT_FILE="$(mktemp)"
 STDERR_FILE="$(mktemp)"
 PLAIN_FILE="$(mktemp)"
-trap 'rm --force "$STDOUT_FILE" "$STDERR_FILE" "$PLAIN_FILE"' EXIT
+DATA_FILE="$(mktemp)"
+trap 'rm --force "$STDOUT_FILE" "$STDERR_FILE" "$PLAIN_FILE" "$DATA_FILE"' EXIT
 
 PASSED=0
 FAILED=0
@@ -51,10 +52,11 @@ has_sanitizer_report() {
 }
 
 # Whether a file is not a program but belongs to one: the messages it must
-# report (.stderr), the output it must give (.stdout) or its options (.args).
+# report (.stderr), the output it must give (.stdout), the data of its replay
+# (.data) or its options (.args).
 is_companion() {
 	case "$1" in
-		*.stderr | *.stdout | *.args) return 0 ;;
+		*.stderr | *.stdout | *.data | *.args) return 0 ;;
 	esac
 	return 1
 }
@@ -257,6 +259,156 @@ check_simulation_reject() {
 	done
 }
 
+# The page that has to be written, whatever the program: it is an HTML document, it
+# has the content security policy, and it loads nothing from outside.
+CONTENT_SECURITY_POLICY="<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:\">"
+
+# Prints what is wrong with the page in the last standard output, if anything is.
+html_problem() {
+	if [ "$(head -n 1 "$STDOUT_FILE")" != "<!DOCTYPE html>" ]; then
+		echo "it does not start with <!DOCTYPE html>"
+	elif [ "$(tail -n 1 "$STDOUT_FILE")" != "</html>" ]; then
+		echo "it does not end with </html>"
+	elif ! grep --text --quiet --fixed-strings "$CONTENT_SECURITY_POLICY" "$STDOUT_FILE"; then
+		echo "it has no content security policy"
+	elif grep --text --quiet --ignore-case --extended-regexp 'http://|https://|<script src|<link' "$STDOUT_FILE"; then
+		echo "it loads something from outside"
+	fi
+}
+
+# Runs the compiler over every program in a folder, to write the page of its
+# replay (--format html), with the seed 1 and the options of its "NN-name.args"
+# file, if it has one. The battle must end (status 0, with no error) or, if there
+# is an "NN-name.stderr" file, fail as it says (status 101, as in
+# simulation-reject). The page must be right (see "html_problem"), and the
+# lines of its data block must be those of the "NN-name.data" file and have no
+# "<", ">" or "&" in them, which the program of the user could use to get out.
+check_html() {
+	local folder="$1"
+	local file
+	local options
+	local expected
+	local problem
+	for file in "$folder"/*; do
+		[ -f "$file" ] || continue
+		is_companion "$file" && continue
+		options=()
+		[ -f "$file.args" ] && read -r -a options <"$file.args"
+		expected=0
+		[ -f "$file.stderr" ] && expected=101
+		run_compiler "$file" --format html --seed 1 "${options[@]}"
+		awk '/<script id="battle-data" type="application\/json">/ { inside = 1; next } inside && /<\/script>/ { exit } inside { print }' "$STDOUT_FILE" >"$DATA_FILE"
+		problem="$(html_problem)"
+		if has_sanitizer_report; then
+			fail "$(basename "$file")" "there is a sanitizer report"
+		elif [ "$RESULT" != "$expected" ]; then
+			fail "$(basename "$file")" "its status is not $expected"
+		elif [ "$expected" == "101" ] && [ -n "$(exhaustive_messages_problem "$file.stderr" 'Simulator')" ]; then
+			fail "$(basename "$file")" "$(exhaustive_messages_problem "$file.stderr" 'Simulator')"
+		elif [ "$expected" == "0" ] && grep --quiet --fixed-strings '[ERROR]' "$PLAIN_FILE"; then
+			fail "$(basename "$file")" "it logs an error"
+		elif [ -n "$problem" ]; then
+			fail "$(basename "$file")" "$problem"
+		elif [ ! -f "$file.data" ]; then
+			fail "$(basename "$file")" "it has no .data file"
+		elif grep --text --quiet '[<>&]' "$DATA_FILE"; then
+			fail "$(basename "$file")" "its data have a character that is not escaped"
+		elif ! diff --brief "$file.data" "$DATA_FILE" >/dev/null; then
+			fail "$(basename "$file")" "its data are not the ones in the .data file"
+			diff "$file.data" "$DATA_FILE" | head -n 6 | sed 's/^/        /'
+		else
+			pass "$(basename "$file")"
+		fi
+	done
+}
+
+# Prints what is wrong with the teams in the text of a battle (the last standard
+# output), if anything is: each team of the header ("Team X: N units") must have
+# a line at the end ("Team X: A alive, D dead") with A + D = N, and no team that is
+# not in the header can have one.
+team_counts_problem() {
+	awk '
+		/^Team [^ :]+: [0-9]+ units?$/ {
+			name = $2
+			sub(/:$/, "", name)
+			units[name] = $3 + 0
+			headers++
+		}
+		/^Team [^ :]+: [0-9]+ alive, [0-9]+ dead$/ {
+			name = $2
+			sub(/:$/, "", name)
+			if (!(name in units)) {
+				print "team " name " is not in the header"
+				failed = 1
+				exit
+			}
+			if ($3 + $5 != units[name]) {
+				print "team " name " ends with " $3 " alive and " $5 " dead, and it started with " units[name] " units"
+				failed = 1
+				exit
+			}
+			closed[name] = 1
+		}
+		END {
+			if (failed) {
+				exit
+			}
+			if (headers == 0) {
+				print "it has no teams"
+				exit
+			}
+			for (name in units) {
+				if (!(name in closed)) {
+					print "team " name " has no counts at the end"
+					exit
+				}
+			}
+		}
+	' "$STDOUT_FILE"
+}
+
+# Runs the compiler over every example program (the ".rpg" files of a folder),
+# with the seed 1, once for the text of the battle and once for its page. The
+# battle must end with a winner (status 0, with no error) in both, the alive and
+# the dead of each team in the text must add up to its units (see
+# "team_counts_problem"), and the page must be right (see "html_problem").
+check_examples() {
+	local folder="$1"
+	local file
+	local problem
+	for file in "$folder"/*.rpg; do
+		[ -f "$file" ] || continue
+		run_compiler "$file" --seed 1
+		problem="$(team_counts_problem)"
+		if has_sanitizer_report; then
+			fail "$(basename "$file")" "there is a sanitizer report"
+			continue
+		elif [ "$RESULT" != "0" ]; then
+			fail "$(basename "$file")" "its battle does not end"
+			continue
+		elif grep --quiet --fixed-strings '[ERROR]' "$PLAIN_FILE"; then
+			fail "$(basename "$file")" "it logs an error"
+			continue
+		elif ! grep --quiet '^Winner: ' "$STDOUT_FILE"; then
+			fail "$(basename "$file")" "its battle has no winner"
+			continue
+		elif [ -n "$problem" ]; then
+			fail "$(basename "$file")" "its teams do not add up: $problem"
+			continue
+		fi
+		run_compiler "$file" --format html --seed 1
+		if has_sanitizer_report; then
+			fail "$(basename "$file")" "there is a sanitizer report in its page"
+		elif [ "$RESULT" != "0" ]; then
+			fail "$(basename "$file")" "its page is not written"
+		elif [ -n "$(html_problem)" ]; then
+			fail "$(basename "$file")" "its page is wrong: $(html_problem)"
+		else
+			pass "$(basename "$file")"
+		fi
+	done
+}
+
 echo "Compiler should accept..."
 echo ""
 check_syntax "src/test/c/accept" 0 1 "rejects"
@@ -285,6 +437,16 @@ echo ""
 echo "Simulation should fail..."
 echo ""
 check_simulation_reject "src/test/c/simulation-reject"
+echo ""
+
+echo "HTML replay should hold..."
+echo ""
+check_html "src/test/c/html"
+echo ""
+
+echo "Examples should end with a winner..."
+echo ""
+check_examples "examples"
 echo ""
 
 if [ "$FAILED" == "0" ]; then

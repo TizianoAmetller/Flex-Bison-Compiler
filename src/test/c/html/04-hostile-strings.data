@@ -1,0 +1,26 @@
+{
+"seed":"1",
+"maxRounds":1,
+"arena":null,
+"teams":["Heroes","Foes"],
+"units":[
+[0,"Hero",0,"Hero",0,0,10,10,1,0,5],
+[1,"Foe",1,"Foe",0,0,10,10,1,0,1]
+],
+"strings":[
+"\u003c/script\u003e\u003cb\u003ex\u003c/b\u003e",
+"it's a 'quote' and a back\\slash and two \\\\ and \\u0041 and \\n",
+"tab:\u0009here \u0026 ampersand \u003c!-- comment --\u003e \u003cimg src=x onerror=alert(1)\u003e",
+"valid UTF-8: café 漢字 and a line separator:\u2028 end"
+],
+"events":[
+[0,1,0,-1,-1,0,0,0,0,0,0,-1],
+[10,1,0,0,-1,0,0,0,0,0,0,0],
+[10,1,0,0,-1,0,0,0,0,0,0,1],
+[10,1,0,0,-1,0,0,0,0,0,0,2],
+[10,1,0,0,-1,0,0,0,0,0,0,3],
+[12,1,0,-1,-1,2,0,0,0,0,0,-1]
+],
+"result":{"kind":"draw-limit","team":-1,"rounds":1},
+"error":null
+}

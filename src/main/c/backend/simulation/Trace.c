@@ -42,6 +42,7 @@ void destroyTrace(Trace * trace) {
 		free(trace->teams);
 		free(trace->units);
 		free(trace->events);
+		free(trace->error);
 		free(trace);
 	}
 }

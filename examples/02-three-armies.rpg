@@ -1,0 +1,191 @@
+/*
+ * 02-three-armies: Crusaders, the Undead and the Orc Horde, all against all.
+ *
+ * The idea: a battle with three teams, where every unit fights its nearest enemy
+ * of ANY other team, so the alliances of the moment change as the lines meet.
+ * The last army standing wins.
+ *
+ * What it shows:
+ *  - Tags. The Skeletons and the Wraith are "undead", and Smite is an ability that
+ *    can only target the undead. The language has no way to ask for the tag of a
+ *    unit inside an expression, so the Paladin tells them apart by what the
+ *    undead have in common here: they all shamble with a speed of 2 or less.
+ *  - Three effects. Terror makes its victim flee for a while ("move away from"),
+ *    Bleeding hurts its victim every turn, and Blessing heals its bearer every
+ *    turn.
+ *  - A "while" loop: the Warlord keeps on striking a target while it is nearly
+ *    dead, until it falls.
+ *  - Dice, "if / else" and "log" with placeholders.
+ *
+ * Run it with a seed: the same seed always gives the same battle.
+ */
+arena (30, 28)
+
+unit Paladin { health: 46, attack: 6, defense: 4, speed: 5, abilities: [Slash, Smite] }
+unit Priest { health: 26, attack: 2, defense: 1, speed: 3, abilities: [Mend, Bless] }
+unit Crossbowman { health: 26, attack: 9, defense: 1, speed: 4, abilities: [Bolt] }
+
+unit Skeleton: undead { health: 30, attack: 7, defense: 2, speed: 2, abilities: [Claw] }
+unit Wraith: undead { health: 28, attack: 6, defense: 1, speed: 1, abilities: [Chill, Wail] }
+
+unit Orc { health: 32, attack: 8, defense: 2, speed: 4, abilities: [Cleave] }
+unit Warlord { health: 30, attack: 8, defense: 3, speed: 3, abilities: [Execute, Gash] }
+
+ability Slash on target: enemy {
+	deal self.attack + 1d6 - target.defense to target
+}
+
+ability Smite on target: undead {
+	log "{self} smites the undead {target}!"
+	deal 10 + 1d6 to target
+}
+
+ability Mend on target: ally {
+	heal 8 + 1d4 to target
+}
+
+ability Bless on target: ally {
+	apply Blessing to target for 3
+}
+
+ability Bolt on target: enemy {
+	deal self.attack + 1d4 - target.defense to target
+}
+
+ability Claw on target: enemy {
+	deal self.attack + 1d4 - target.defense to target
+}
+
+ability Chill on target: enemy {
+	deal self.attack + 1d4 to target
+}
+
+ability Wail on target: enemy {
+	log "{self} wails and {target} loses its nerve"
+	apply Terror to target for 2
+}
+
+ability Cleave on target: enemy {
+	deal self.attack + 1d4 - target.defense to target
+}
+
+ability Execute on target: enemy {
+	deal self.attack + 1d4 - target.defense to target
+	while (0 < target.health and target.health < 12) {
+		deal 4 to target
+	}
+}
+
+ability Gash on target: enemy {
+	apply Bleeding to target for 3
+}
+
+effect Terror on victim {
+	log "{victim} panics"
+	move away from nearest(enemy)
+	move away from nearest(enemy)
+}
+
+effect Bleeding on victim {
+	deal 3 to victim
+}
+
+effect Blessing on victim {
+	heal 4 to victim
+}
+
+on turn Paladin {
+	move toward nearest(enemy)
+	for (neighbor in radius 2 of nearest(enemy)) {
+		if (neighbor == self) {
+			if (nearest(enemy).speed < 3) {
+				use Smite on nearest(enemy)
+			} else {
+				use Slash on nearest(enemy)
+			}
+		}
+	}
+}
+
+on turn Priest {
+	for (friend in allies) {
+		if (friend.health < 20) {
+			use Mend on friend
+		} else {
+			if (friend.health < 28 and 1d3 == 1) {
+				use Bless on friend
+			}
+		}
+	}
+}
+
+on turn Crossbowman {
+	move toward nearest(enemy)
+	for (neighbor in radius 8 of nearest(enemy)) {
+		if (neighbor == self) {
+			use Bolt on nearest(enemy)
+		}
+	}
+}
+
+on turn Skeleton {
+	move toward nearest(enemy)
+	for (neighbor in radius 2 of nearest(enemy)) {
+		if (neighbor == self) {
+			use Claw on nearest(enemy)
+		}
+	}
+}
+
+on turn Wraith {
+	move toward nearest(enemy)
+	for (neighbor in radius 5 of nearest(enemy)) {
+		if (neighbor == self) {
+			if (1d3 == 1) {
+				use Wail on nearest(enemy)
+			} else {
+				use Chill on nearest(enemy)
+			}
+		}
+	}
+}
+
+on turn Orc {
+	move toward nearest(enemy)
+	for (neighbor in radius 2 of nearest(enemy)) {
+		if (neighbor == self) {
+			use Cleave on nearest(enemy)
+		}
+	}
+}
+
+on turn Warlord {
+	move toward nearest(enemy)
+	for (neighbor in radius 2 of nearest(enemy)) {
+		if (neighbor == self) {
+			if (1d3 == 1) {
+				use Gash on nearest(enemy)
+			} else {
+				use Execute on nearest(enemy)
+			}
+		}
+	}
+}
+
+party Crusaders = [
+	Paladin at (13, 6), Paladin at (17, 6),
+	Priest at (15, 3),
+	Crossbowman at (12, 4), Crossbowman at (18, 4)
+]
+
+encounter Undead = [
+	Skeleton * 4 around (4, 23),
+	Wraith at (3, 25)
+]
+
+encounter Horde = [
+	Orc * 3 around (26, 23),
+	Warlord at (27, 25)
+]
+
+battle: [Crusaders, Undead, Horde]

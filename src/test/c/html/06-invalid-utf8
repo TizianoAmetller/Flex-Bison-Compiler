@@ -1,0 +1,11 @@
+unit Hero { health: 10, attack: 1, defense: 0, speed: 5 }
+unit Foe { health: 10, attack: 1, defense: 0, speed: 1 }
+
+on turn Hero {
+	log "bad byte: ÿ and a cut sequence: æ¼ end"
+}
+
+party Heroes = [Hero]
+encounter Foes = [Foe]
+
+battle: [Heroes, Foes]

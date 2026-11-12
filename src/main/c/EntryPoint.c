@@ -1,4 +1,5 @@
 #include "backend/code-generation/Generator.h"
+#include "backend/code-generation/HtmlGenerator.h"
 #include "backend/semantic-analysis/SemanticAnalyzer.h"
 #include "backend/semantic-analysis/SemanticModel.h"
 #include "backend/simulation/SimulationLimits.h"
@@ -47,13 +48,13 @@ static bool _parseUnsigned(const char * text, uint64_t * value) {
 
 /**
  * Parses the command-line arguments (the first one is the program itself) into
- * the compiler state: "--syntax-only", "--check", "--seed N" and "--max-rounds
- * N". If there is no seed, it is the SEED environment variable (when it is not
+ * the compiler state: "--syntax-only", "--check", "--seed N", "--max-rounds N"
+ * and "--format text|html". If there is no seed, it is the SEED environment variable (when it is not
  * empty) or else a random one. Returns false, after reporting it, when there is
  * an unknown option or an invalid value.
  */
 static bool _parseArguments(const int length, const char ** arguments, CompilerState * compilerState, const Logger * logger) {
-	static const char * usage = "Usage: Flex-Bison-Compiler [--syntax-only] [--check] [--seed N] [--max-rounds N] < <program>";
+	static const char * usage = "Usage: Flex-Bison-Compiler [--syntax-only] [--check] [--seed N] [--max-rounds N] [--format text|html] < <program>";
 	bool hasSeed = false;
 	compilerState->maxRounds = DEFAULT_MAX_ROUNDS;
 	for (int k = 1; k < length; ++k) {
@@ -83,6 +84,15 @@ static bool _parseArguments(const int length, const char ** arguments, CompilerS
 			compilerState->maxRounds = (int) value;
 			++k;
 		}
+		else if (strcmp(arguments[k], "--format") == 0) {
+			if (length <= k + 1 || (strcmp(arguments[k + 1], "text") != 0 && strcmp(arguments[k + 1], "html") != 0)) {
+				logError(logger, "Invalid value for --format: %s (it must be text or html)", (length <= k + 1) ? "(missing)" : arguments[k + 1]);
+				logError(logger, "%s", usage);
+				return false;
+			}
+			compilerState->format = (strcmp(arguments[k + 1], "html") == 0) ? FORMAT_HTML : FORMAT_TEXT;
+			++k;
+		}
 		else {
 			logError(logger, "Unknown option: %s", arguments[k]);
 			logError(logger, "%s", usage);
@@ -109,13 +119,19 @@ static bool _parseArguments(const int length, const char ** arguments, CompilerS
 }
 
 /**
- * Simulates the battle and writes its text to the standard output, even if the
- * simulation fails halfway: what happened until then is shown.
+ * Simulates the battle and writes it to the standard output, as text or as an
+ * HTML page, even if the simulation fails halfway: what happened until then is
+ * shown.
  */
 static CompilationStatus _simulate(CompilerState * compilerState, const Logger * logger) {
 	CompilationStatus status = executeSimulation(compilerState);
-	if (compilerState->trace != NULL && !generateText(compilerState->trace, stdout)) {
-		status = OUT_OF_MEMORY;
+	if (compilerState->trace != NULL) {
+		const bool written = (compilerState->format == FORMAT_HTML)
+			? generateHtml(compilerState->trace, stdout)
+			: generateText(compilerState->trace, stdout);
+		if (!written) {
+			status = OUT_OF_MEMORY;
+		}
 	}
 	fflush(stdout);
 	if (status != SUCCEEDED) {
@@ -131,8 +147,8 @@ static CompilationStatus _simulate(CompilerState * compilerState, const Logger *
  *
  * @note
  *	Once the program is accepted (syntactic analysis) and validated (semantic
- *	analysis), the battle it declares is simulated, and the text that tells it
- *	goes to the standard output. The exit status is 0 if the battle ends, 1 if
+ *	analysis), the battle it declares is simulated, and what tells it (a text,
+ *	or an HTML page that replays it) goes to the standard output. The exit status is 0 if the battle ends, 1 if
  *	the program is rejected, 100 if the command line is invalid and 101 if the
  *	simulation fails.
  */
@@ -148,6 +164,7 @@ int main(const int length, const char ** arguments) {
 		.check = false,
 		.seed = 0,
 		.maxRounds = DEFAULT_MAX_ROUNDS,
+		.format = FORMAT_TEXT,
 		.semanticModel = NULL,
 		.trace = NULL
 	};

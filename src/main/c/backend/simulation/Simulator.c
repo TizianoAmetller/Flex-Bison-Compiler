@@ -41,6 +41,8 @@ typedef struct {
 	int depth;
 	/** How many "use" are inside one another. */
 	int callDepth;
+	/** How many bodies and blocks are running one inside another, through every "use". */
+	int blockDepth;
 } Simulation;
 
 /** What happened when the targets of a statement were looked up. */
@@ -177,8 +179,9 @@ static void _mend(Simulation * simulation, const int actor, const int targetId, 
 
 /**
  * The units that a statement works on: the one the value is, or those it
- * lists. Nothing was found for NONE, and a unit that is dead is not a target:
- * in both cases the statement is skipped, with its reason.
+ * lists. If nothing was found (NONE) the statement is skipped, and that is told.
+ * A unit that is dead is not a target: the statement does nothing, and nothing
+ * is told.
  */
 static TargetsStatus _findTargets(Simulation * simulation, const Value * value, const int perspective, const int line, const int ** ids, size_t * count, int * single) {
 	switch (value->kind) {
@@ -188,7 +191,6 @@ static TargetsStatus _findTargets(Simulation * simulation, const Value * value, 
 		case VALUE_UNIT:
 			*single = (int) value->number;
 			if (!getUnit(simulation->runtime.world, *single)->alive) {
-				_emitSkip(simulation, perspective, REASON_TARGET_DEAD, NULL, -1);
 				return TARGETS_SKIPPED;
 			}
 			*ids = single;
@@ -442,10 +444,7 @@ static void _executeMove(Simulation * simulation, const Statement * statement, c
 		else if (target.kind != VALUE_UNIT) {
 			runtimeFail(&simulation->runtime, "line %d: expected a unit, got %s", statement->line, valueKindName(target.kind));
 		}
-		else if (!getUnit(world, (int) target.number)->alive) {
-			_emitSkip(simulation, perspective, REASON_TARGET_DEAD, NULL, -1);
-		}
-		else {
+		else if (getUnit(world, (int) target.number)->alive) {
 			Unit * unit = getUnit(world, perspective);
 			const Unit * destination = getUnit(world, (int) target.number);
 			const int64_t fromX = unit->x;
@@ -718,14 +717,25 @@ static void _executeStatement(Simulation * simulation, const Statement * stateme
 }
 
 /**
- * Runs the statements of a body one after the other, each one seeing what the
- * previous one left. The perspective is the unit that "allies", "enemies" and
- * "nearest" are relative to.
+ * Runs the statements of a body or a block one after the other, each one seeing
+ * what the previous one left. The perspective is the unit that "allies",
+ * "enemies" and "nearest" are relative to. The bodies and blocks that are
+ * running one inside another are counted, through every "use" in the chain,
+ * because each one takes room in the stack: there is a limit to them.
  */
 static void _execute(Simulation * simulation, const StatementList * statements, const int perspective, const RuntimeScope * scope) {
+	if (statements == NULL) {
+		return;
+	}
+	if (MAX_BLOCK_DEPTH <= simulation->blockDepth) {
+		runtimeFail(&simulation->runtime, "line %d: the statements are nested too deep (the limit is %d)", statements->statement->line, MAX_BLOCK_DEPTH);
+		return;
+	}
+	++simulation->blockDepth;
 	for (const StatementList * item = statements; item != NULL && !simulation->runtime.failed; item = item->next) {
 		_executeStatement(simulation, item->statement, perspective, scope);
 	}
+	--simulation->blockDepth;
 }
 
 /**
@@ -754,7 +764,9 @@ static void _runEffects(Simulation * simulation, const int unitId) {
 			continue;
 		}
 		TraceEvent * event = _emit(simulation, EVENT_EFFECT_TICK);
-		if (event != NULL) {
+		const bool ticked = (event != NULL);
+		const size_t tickIndex = simulation->trace->eventCount - 1;
+		if (ticked) {
 			event->actor = unitId;
 			event->target = unitId;
 			event->name = effects[k]->name;
@@ -763,20 +775,25 @@ static void _runEffects(Simulation * simulation, const int unitId) {
 		++simulation->depth;
 		_execute(simulation, effects[k]->body, unitId, &parameter);
 		--simulation->depth;
-		if (simulation->runtime.failed || !unit->alive) {
+		const bool stopped = simulation->runtime.failed || !unit->alive;
+		const int index = findActiveEffect(unit, effects[k]);
+		if (0 <= index && !stopped) {
+			--unit->effects[index].remaining;
+		}
+		if (ticked) {
+			/** The event says the turns that are left after the tick, which a replay can't know otherwise. */
+			simulation->trace->events[tickIndex].amount = (0 <= index) ? unit->effects[index].remaining : 0;
+		}
+		if (stopped) {
 			break;
 		}
-		const int index = findActiveEffect(unit, effects[k]);
-		if (0 <= index) {
-			--unit->effects[index].remaining;
-			if (unit->effects[index].remaining <= 0) {
-				removeActiveEffect(unit, (size_t) index);
-				event = _emit(simulation, EVENT_EFFECT_END);
-				if (event != NULL) {
-					event->actor = unitId;
-					event->target = unitId;
-					event->name = effects[k]->name;
-				}
+		if (0 <= index && unit->effects[index].remaining <= 0) {
+			removeActiveEffect(unit, (size_t) index);
+			event = _emit(simulation, EVENT_EFFECT_END);
+			if (event != NULL) {
+				event->actor = unitId;
+				event->target = unitId;
+				event->name = effects[k]->name;
 			}
 		}
 	}
@@ -956,6 +973,11 @@ CompilationStatus executeSimulation(CompilerState * compilerState) {
 	CompilationStatus status = SUCCEEDED;
 	if (simulation.runtime.failed) {
 		logError(_logger, "simulation error: %s", simulation.runtime.error);
+		const size_t size = strlen(simulation.runtime.error) + 1;
+		trace->error = malloc(size);
+		if (trace->error != NULL) {
+			memcpy(trace->error, simulation.runtime.error, size);
+		}
 		status = simulation.runtime.outOfMemory ? OUT_OF_MEMORY : SIMULATION_ERROR;
 	}
 	destroyWorld(world);

@@ -70,7 +70,8 @@ typedef struct {
  *   DAMAGE, HEAL               target takes or gets "amount"; "health" is its health after
  *   DEATH                      target dies
  *   EFFECT_APPLIED, _REFRESHED the effect "name" is on target for "amount" turns
- *   EFFECT_TICK, EFFECT_END    the effect "name" acts on target, or wears off from it
+ *   EFFECT_TICK                the effect "name" acts on target; "amount" is its turns left after the tick
+ *   EFFECT_END                 the effect "name" wears off from target
  *   MOVE                       actor goes from (fromX, fromY) to (x, y), "toward" or "away from" (name) target
  *   LOG                        actor says "text"
  *   SKIP                       actor skips a statement, because of "reason"; with a "name" it was a "use" on target
@@ -117,6 +118,8 @@ struct Trace {
 	TraceEvent * events;
 	size_t eventCount;
 	size_t eventCapacity;
+	/** Why the simulation failed, or NULL if it didn't. Owned by the trace. */
+	char * error;
 };
 
 /** Creates an empty trace, or returns NULL if it runs out of memory. */

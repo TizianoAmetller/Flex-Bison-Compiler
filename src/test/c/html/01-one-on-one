@@ -1,0 +1,19 @@
+unit Hero { health: 30, attack: 8, defense: 2, speed: 6, abilities: [Slash] }
+unit Goblin { health: 12, attack: 5, defense: 1, speed: 4, abilities: [Slash] }
+
+ability Slash on target: enemy {
+	deal self.attack - target.defense to target
+}
+
+on turn Hero {
+	use Slash on nearest(enemy)
+}
+
+on turn Goblin {
+	use Slash on nearest(enemy)
+}
+
+party Heroes = [Hero]
+encounter Goblins = [Goblin]
+
+battle: [Heroes, Goblins]

@@ -1,0 +1,47 @@
+arena (20, 10)
+
+unit Hero at (1, 5) { health: 30, attack: 4, defense: 1, speed: 6, abilities: [Slash, Hex, Mend] }
+unit Cleric at (0, 4) { health: 18, attack: 2, defense: 0, speed: 3, abilities: [Mend] }
+unit Goblin at (15, 5) { health: 24, attack: 4, defense: 0, speed: 5, abilities: [Slash] }
+
+effect Poison on victim {
+	deal 2 to victim
+	log "{victim} suffers"
+}
+
+ability Slash on target: enemy {
+	deal self.attack - target.defense to target
+}
+
+ability Hex on target: enemy {
+	apply Poison to target for 2
+}
+
+ability Mend on target: ally, self {
+	heal 5 to target
+	log "{self} mends {target}"
+}
+
+on turn Hero {
+	move toward nearest(enemy)
+	if (nearest(enemy).health > 12) {
+		use Hex on nearest(enemy)
+	}
+	use Slash on nearest(enemy)
+	use Mend on self
+}
+
+on turn Cleric {
+	use Mend on nearest(ally)
+	use Mend on nearest(enemy)
+}
+
+on turn Goblin {
+	move toward nearest(enemy)
+	use Slash on nearest(enemy)
+}
+
+party Heroes = [Hero, Cleric]
+encounter Goblins = [Goblin]
+
+battle: [Heroes, Goblins]

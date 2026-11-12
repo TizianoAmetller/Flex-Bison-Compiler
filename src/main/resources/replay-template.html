@@ -1,0 +1,2253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:">
+<title>RPG battle replay</title>
+<style>
+:root {
+	--bg: #f4f2ec;
+	--panel: #ffffff;
+	--ink: #1d2330;
+	--muted: #566074;
+	--line: #d3cfc1;
+	--accent: #0b5cad;
+	--danger: #b3261e;
+	color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body {
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+	background: var(--bg);
+	color: var(--ink);
+	font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+header {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 2px 24px;
+	padding: 10px 16px;
+	background: var(--panel);
+	border-bottom: 1px solid var(--line);
+}
+h1 { margin: 0; font-size: 18px; }
+#meta { display: flex; flex-wrap: wrap; gap: 2px 18px; color: var(--muted); }
+#meta strong { color: var(--ink); }
+#meta code { padding: 0 4px; background: #eceae1; border-radius: 3px; font-size: 12.5px; }
+#banner {
+	padding: 10px 16px;
+	background: var(--danger);
+	color: #ffffff;
+	font-weight: 600;
+}
+main {
+	flex: 1;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(300px, 30%);
+	gap: 12px;
+	padding: 12px 16px;
+}
+#field-panel { min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+#field { position: relative; width: 100%; display: flex; justify-content: center; }
+canvas {
+	display: block;
+	max-width: 100%;
+	background: #fbfaf6;
+	border: 1px solid var(--line);
+	border-radius: 4px;
+}
+#legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 16px; color: var(--muted); }
+.swatch {
+	display: inline-block;
+	width: 12px;
+	height: 12px;
+	margin-right: 6px;
+	vertical-align: -1px;
+	border: 1px solid rgba(0, 0, 0, 0.4);
+	border-radius: 50%;
+}
+main.wide { grid-template-columns: minmax(0, 1fr) minmax(420px, 46%); }
+#side {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	min-height: 240px;
+	height: calc(100vh - 235px);
+	background: var(--panel);
+	border: 1px solid var(--line);
+	border-radius: 4px;
+}
+#tabs { display: flex; gap: 2px; padding: 6px 8px 0; border-bottom: 1px solid var(--line); }
+.tab {
+	padding: 6px 16px;
+	font-weight: 600;
+	color: var(--muted);
+	background: transparent;
+	border: 1px solid transparent;
+	border-bottom: 0;
+	border-radius: 4px 4px 0 0;
+}
+.tab[aria-selected="true"] {
+	margin-bottom: -1px;
+	color: var(--ink);
+	background: var(--panel);
+	border-color: var(--line);
+	box-shadow: inset 0 3px 0 var(--accent);
+}
+#log-view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+#log {
+	position: relative;
+	flex: 1;
+	overflow: auto;
+	padding: 4px 0;
+	font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+#metrics-view { flex: 1; min-height: 0; overflow: auto; padding: 10px 12px 16px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 12px; }
+.card { min-width: 0; padding: 8px 10px; background: #f7f6f1; border: 1px solid var(--line); border-radius: 4px; }
+.card .label { color: var(--muted); font-size: 12px; }
+.card .value { font-size: 18px; font-weight: 700; overflow-wrap: anywhere; }
+.card .sub { color: var(--muted); font-size: 12px; }
+#metrics-view h3 { margin: 14px 0 4px; font-size: 13px; }
+.chart-legend { display: flex; flex-wrap: wrap; gap: 2px 14px; margin-bottom: 3px; color: var(--muted); font-size: 12px; }
+.chart-legend .swatch { border-radius: 2px; }
+.swatch.striped { background-image: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.75) 0, rgba(0, 0, 0, 0.75) 2px, #ffffff 2px, #ffffff 4px); }
+canvas.chart { display: block; max-width: 100%; background: #ffffff; cursor: pointer; }
+.table-wrap { overflow-x: auto; }
+table.metrics { width: 100%; border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+table.metrics th, table.metrics td { padding: 3px 7px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+table.metrics th:first-child, table.metrics td:first-child { text-align: left; }
+table.metrics thead th { border-bottom: 2px solid #aaa597; }
+table.metrics button.sort { padding: 0; font: inherit; font-weight: 700; background: none; border: 0; border-radius: 2px; }
+table.metrics button.sort:hover:not(:disabled) { background: none; text-decoration: underline; }
+table.metrics th[aria-sort="ascending"] button.sort::after { content: " \25B2"; font-size: 10px; }
+table.metrics th[aria-sort="descending"] button.sort::after { content: " \25BC"; font-size: 10px; }
+table.metrics tbody tr.clickable { cursor: pointer; }
+table.metrics tbody tr.clickable:hover { background: #f0efe8; }
+.more { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-top: 6px; color: var(--muted); font-size: 12.5px; }
+.help { color: var(--muted); font-size: 12.5px; }
+.help summary { cursor: pointer; }
+.help ul { margin: 4px 0 0; padding-left: 18px; }
+kbd { padding: 0 5px; font: 11.5px ui-monospace, Consolas, monospace; color: var(--ink); background: #ffffff; border: 1px solid #aaa597; border-bottom-width: 2px; border-radius: 3px; }
+.row { padding: 0 10px; cursor: pointer; }
+.row:hover { background: #f0efe8; }
+.row .line { white-space: pre-wrap; overflow-wrap: anywhere; }
+.row.current { background: #fff1b8; box-shadow: inset 3px 0 0 var(--accent); }
+.row.t-round { margin-top: 8px; padding-top: 4px; border-top: 1px solid var(--line); font-weight: 700; }
+.row.t-round:first-child { margin-top: 0; border-top: 0; }
+.row.t-end { margin-top: 8px; padding-top: 4px; border-top: 1px solid var(--line); font-weight: 700; }
+.row.t-death .line { font-weight: 700; }
+.row.t-skip .line { font-style: italic; color: var(--muted); }
+.row.t-log .line { color: #7a4a00; }
+/* What has not happened yet is grayer (at least 5:1 over white, so it stays readable). */
+.row.future .line { color: #5a6376; }
+.row.current .line { color: var(--ink); }
+.row.current.t-skip .line { color: var(--muted); }
+#controls {
+	position: sticky;
+	bottom: 0;
+	display: grid;
+	gap: 8px;
+	padding: 8px 16px 10px;
+	background: var(--panel);
+	border-top: 1px solid var(--line);
+}
+.buttons { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.buttons .spacer { flex: 1; }
+.speed { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+.speed input { width: 160px; }
+.progress { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; }
+.progress input { width: 100%; }
+#round-label { min-width: 11em; text-align: right; font-variant-numeric: tabular-nums; }
+button {
+	padding: 6px 12px;
+	font: inherit;
+	color: var(--ink);
+	background: #ffffff;
+	border: 1px solid #aaa597;
+	border-radius: 4px;
+	cursor: pointer;
+}
+button:hover:not(:disabled) { background: #e8f0fa; border-color: var(--accent); }
+button:disabled { color: #8c8c8c; background: #f1f0eb; cursor: default; }
+button.primary { min-width: 5.5em; color: #ffffff; background: var(--accent); border-color: var(--accent); font-weight: 600; }
+button.primary:hover:not(:disabled) { background: #084a8c; }
+button:focus-visible, input:focus-visible, summary:focus-visible, #log:focus-visible, #metrics-view:focus-visible {
+	outline: 3px solid var(--accent);
+	outline-offset: 2px;
+	box-shadow: 0 0 0 2px #ffffff;
+}
+#tooltip {
+	position: fixed;
+	z-index: 10;
+	max-width: 300px;
+	padding: 8px 10px;
+	color: #ffffff;
+	background: #1d2330;
+	border-radius: 4px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+	font-size: 12.5px;
+	pointer-events: none;
+}
+#tooltip .tt-name { font-weight: 700; font-size: 13.5px; }
+@media (max-width: 899px) {
+	main, main.wide { grid-template-columns: minmax(0, 1fr); }
+	#side { height: 420px; }
+}
+@media (prefers-reduced-motion: reduce) {
+	* { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+}
+@media print {
+	* { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+	body { min-height: 0; background: #ffffff; }
+	#controls, #tabs, #log-view, #tooltip, .help { display: none !important; }
+	main, main.wide { display: block; padding: 8px 0; }
+	#side { display: block; height: auto; min-height: 0; margin-top: 12px; border: 0; }
+	#metrics-view { display: block !important; overflow: visible; padding: 0; }
+	#field-canvas, canvas.chart { width: 100% !important; height: auto !important; max-width: 100%; }
+	#field-panel, section, .cards, table.metrics tr { break-inside: avoid; }
+	table.metrics button.sort { color: #000000; }
+}
+</style>
+</head>
+<body>
+<noscript>This replay needs JavaScript.</noscript>
+<div id="banner" role="alert" hidden></div>
+<header>
+	<h1>RPG battle replay</h1>
+	<div id="meta"></div>
+</header>
+<main>
+	<section id="field-panel" aria-label="Battlefield">
+		<div id="field">
+			<canvas id="field-canvas" role="img" aria-label="Battlefield with the units of the battle"></canvas>
+		</div>
+		<div id="legend"></div>
+		<details id="help" class="help">
+			<summary>Keyboard shortcuts</summary>
+			<ul>
+				<li><kbd>Space</kbd> plays or pauses</li>
+				<li><kbd>&larr;</kbd> and <kbd>&rarr;</kbd> go one event back or forward</li>
+				<li><kbd>Shift</kbd> + <kbd>&larr;</kbd> or <kbd>&rarr;</kbd> go one round back or forward</li>
+				<li>Click a line of the log, a point of a chart or a row of the units table to jump there</li>
+			</ul>
+		</details>
+	</section>
+	<aside id="side" aria-label="Log and metrics">
+		<div id="tabs" role="tablist" aria-label="Side panel">
+			<button id="tab-log" class="tab" role="tab" type="button" aria-selected="true" aria-controls="log-view">Log</button>
+			<button id="tab-metrics" class="tab" role="tab" type="button" aria-selected="false" aria-controls="metrics-view" tabindex="-1">Metrics</button>
+		</div>
+		<div id="log-view" role="tabpanel" aria-labelledby="tab-log">
+			<div id="log" tabindex="0"></div>
+		</div>
+		<div id="metrics-view" role="tabpanel" aria-labelledby="tab-metrics" tabindex="0" hidden></div>
+	</aside>
+</main>
+<footer id="controls">
+	<div class="buttons">
+		<button id="btn-play" class="primary" type="button" title="Play or pause (space)">Play</button>
+		<button id="btn-reset" type="button" title="Back to the start">Reset</button>
+		<button id="btn-prev-round" type="button" title="Previous round (shift + left arrow)">&laquo; Round</button>
+		<button id="btn-prev-event" type="button" title="Previous event (left arrow)">&lsaquo; Event</button>
+		<button id="btn-next-event" type="button" title="Next event (right arrow)">Event &rsaquo;</button>
+		<button id="btn-next-round" type="button" title="Next round (shift + right arrow)">Round &raquo;</button>
+		<span class="spacer"></span>
+		<label class="speed">Speed
+			<input id="speed" type="range" min="1" max="60" step="1" value="10" aria-label="Speed in events per second">
+			<span id="speed-label">10 events/s</span>
+		</label>
+	</div>
+	<div class="progress">
+		<input id="progress" type="range" min="0" max="0" step="1" value="0" aria-label="Progress through the events">
+		<span id="round-label">Round 0 / 0</span>
+	</div>
+</footer>
+<div id="tooltip" role="tooltip" hidden></div>
+<script id="battle-data" type="application/json">
+@@BATTLE_DATA@@
+</script>
+<script>
+"use strict";
+
+/*
+ * The replay of a battle. The data (see the block above) are the trace of the
+ * simulation: this script only plays them back, applying the values that the
+ * events carry. It never evaluates anything that comes from the data, and every
+ * text of them is put in the page with textContent.
+ *
+ * "Replay" is the part with no page in it (the lines of the log, as the text
+ * mode writes them, and the state of the battle at any event), which is what
+ * the tests run.
+ */
+var Replay = (function () {
+	var EVENT = { ROUND_START: 0, USE: 1, DAMAGE: 2, HEAL: 3, DEATH: 4, EFFECT_APPLIED: 5, EFFECT_REFRESHED: 6, EFFECT_TICK: 7, EFFECT_END: 8, MOVE: 9, LOG: 10, SKIP: 11, BATTLE_END: 12 };
+	/* The fields of an event, and of a unit, in the arrays of the data. */
+	var F = { TYPE: 0, ROUND: 1, DEPTH: 2, ACTOR: 3, TARGET: 4, AMOUNT: 5, HEALTH: 6, FROM_X: 7, FROM_Y: 8, X: 9, Y: 10, STRING: 11 };
+	var U = { ID: 0, NAME: 1, TEAM: 2, DECLARATION: 3, X: 4, Y: 5, HEALTH: 6, MAX_HEALTH: 7, ATTACK: 8, DEFENSE: 9, SPEED: 10 };
+	/* The memory that the checkpoints of the states can use, more or less. */
+	var CHECKPOINT_BUDGET = 64e6;
+	var BYTES_PER_UNIT = 25;
+
+	function plural(count, one, many) {
+		return count === 1 ? one : many;
+	}
+
+	function spaces(count) {
+		return count > 0 ? new Array(count + 1).join(" ") : "";
+	}
+
+	function create(data) {
+		var events = data.events;
+		var units = data.units;
+		var strings = data.strings;
+		var teams = data.teams;
+		var eventCount = events.length;
+		var unitCount = units.length;
+		var k;
+
+		function unitName(id) {
+			return (id >= 0 && id < unitCount) ? units[id][U.NAME] : "?";
+		}
+
+		function stringOf(event) {
+			var index = event[F.STRING];
+			return (index >= 0 && index < strings.length) ? strings[index] : "";
+		}
+
+		/* The units each team started with, and the ones that died. */
+		var totals = [];
+		var deaths = [];
+		for (k = 0; k < teams.length; k++) {
+			totals.push(0);
+			deaths.push(0);
+		}
+		for (k = 0; k < unitCount; k++) {
+			totals[units[k][U.TEAM]]++;
+		}
+		for (k = 0; k < eventCount; k++) {
+			if (events[k][F.TYPE] === EVENT.DEATH) {
+				deaths[units[events[k][F.TARGET]][U.TEAM]]++;
+			}
+		}
+
+		function resultLine() {
+			var result = data.result;
+			if (!result) {
+				return "";
+			}
+			if (result.kind === "winner") {
+				return "Winner: " + teams[result.team];
+			}
+			if (result.kind === "draw-nobody") {
+				return "Draw: nobody is left alive";
+			}
+			return "Draw: round limit (" + data.maxRounds + ") reached";
+		}
+
+		/* How the battle starts, as the text mode writes it. */
+		function headerLines() {
+			var lines = ["Seed: " + data.seed];
+			lines.push(data.arena ? ("Arena: " + data.arena[0] + "x" + data.arena[1]) : "Arena: unbounded");
+			for (var t = 0; t < teams.length; t++) {
+				lines.push("Team " + teams[t] + ": " + totals[t] + " " + plural(totals[t], "unit", "units"));
+			}
+			return lines;
+		}
+
+		/* The lines of an event, with the same words and the same indentation as the text mode. */
+		function eventLines(event) {
+			var indent = spaces(2 * event[F.DEPTH]);
+			var actor = unitName(event[F.ACTOR]);
+			var target = unitName(event[F.TARGET]);
+			var amount = event[F.AMOUNT];
+			var maxHealth = (event[F.TARGET] >= 0 && event[F.TARGET] < unitCount) ? units[event[F.TARGET]][U.MAX_HEALTH] : 0;
+			switch (event[F.TYPE]) {
+			case EVENT.ROUND_START:
+				return ["Round " + event[F.ROUND]];
+			case EVENT.USE:
+				return [indent + actor + " uses " + stringOf(event) + " on " + target];
+			case EVENT.DAMAGE:
+				return [indent + target + " takes " + amount + " damage (health " + event[F.HEALTH] + "/" + maxHealth + ")"];
+			case EVENT.HEAL:
+				return [indent + target + " heals " + amount + " (health " + event[F.HEALTH] + "/" + maxHealth + ")"];
+			case EVENT.DEATH:
+				return [indent + target + " dies"];
+			case EVENT.EFFECT_APPLIED:
+				return [indent + target + " is affected by " + stringOf(event) + " for " + amount + " " + plural(amount, "turn", "turns")];
+			case EVENT.EFFECT_REFRESHED:
+				return [indent + stringOf(event) + " on " + target + " is refreshed to " + amount + " " + plural(amount, "turn", "turns")];
+			case EVENT.EFFECT_TICK:
+				return [indent + stringOf(event) + " acts on " + target];
+			case EVENT.EFFECT_END:
+				return [indent + stringOf(event) + " wears off from " + target];
+			case EVENT.MOVE:
+				if (event[F.X] === event[F.FROM_X] && event[F.Y] === event[F.FROM_Y]) {
+					return [indent + actor + " stays at (" + event[F.X] + ", " + event[F.Y] + ")"];
+				}
+				return [indent + actor + " moves " + stringOf(event) + " " + target + ": (" + event[F.FROM_X] + ", " + event[F.FROM_Y] + ") -> (" + event[F.X] + ", " + event[F.Y] + ")"];
+			case EVENT.LOG:
+				return [indent + "> " + stringOf(event)];
+			case EVENT.SKIP:
+				var reason = (amount >= 0 && amount < strings.length) ? strings[amount] : "";
+				if (event[F.STRING] >= 0) {
+					return [indent + actor + " cannot use " + stringOf(event) + " on " + target + ": " + reason];
+				}
+				return [indent + actor + " skips a statement: " + reason];
+			case EVENT.BATTLE_END:
+				var lines = ["Battle over after " + event[F.ROUND] + " " + plural(event[F.ROUND], "round", "rounds") + ".", resultLine()];
+				for (var t = 0; t < teams.length; t++) {
+					lines.push("Team " + teams[t] + ": " + (totals[t] - deaths[t]) + " alive, " + deaths[t] + " dead");
+				}
+				return lines;
+			}
+			return [];
+		}
+
+		/* The whole text mode output, which is what the tests compare with. */
+		function buildText() {
+			var lines = headerLines();
+			for (var i = 0; i < eventCount; i++) {
+				var type = events[i][F.TYPE];
+				if (type === EVENT.ROUND_START || type === EVENT.BATTLE_END) {
+					lines.push("");
+				}
+				lines.push.apply(lines, eventLines(events[i]));
+			}
+			return lines.join("\n") + "\n";
+		}
+
+		/* The events at which a round starts, and the number of rounds. */
+		var roundStarts = [];
+		for (k = 0; k < eventCount; k++) {
+			if (events[k][F.TYPE] === EVENT.ROUND_START) {
+				roundStarts.push(k);
+			}
+		}
+		var totalRounds = eventCount > 0 ? events[eventCount - 1][F.ROUND] : 0;
+
+		/* The state of the battle: only what the events change. The effects are [unit, name, turns left] triples. */
+		function initialState() {
+			var state = { x: new Float64Array(unitCount), y: new Float64Array(unitCount), health: new Float64Array(unitCount), alive: new Uint8Array(unitCount), effects: [] };
+			for (var i = 0; i < unitCount; i++) {
+				state.x[i] = units[i][U.X];
+				state.y[i] = units[i][U.Y];
+				state.health[i] = units[i][U.HEALTH];
+				state.alive[i] = 1;
+			}
+			return state;
+		}
+
+		function cloneState(state) {
+			return { x: new Float64Array(state.x), y: new Float64Array(state.y), health: new Float64Array(state.health), alive: new Uint8Array(state.alive), effects: state.effects.slice() };
+		}
+
+		function findEffect(state, unit, name) {
+			for (var i = 0; i < state.effects.length; i += 3) {
+				if (state.effects[i] === unit && state.effects[i + 1] === name) {
+					return i;
+				}
+			}
+			return -1;
+		}
+
+		/* Applies the values of an event. Nothing here is a rule of the game. */
+		function applyEvent(state, event) {
+			var target = event[F.TARGET];
+			var index;
+			switch (event[F.TYPE]) {
+			case EVENT.DAMAGE:
+			case EVENT.HEAL:
+				state.health[target] = event[F.HEALTH];
+				break;
+			case EVENT.DEATH:
+				state.alive[target] = 0;
+				break;
+			case EVENT.MOVE:
+				state.x[event[F.ACTOR]] = event[F.X];
+				state.y[event[F.ACTOR]] = event[F.Y];
+				break;
+			case EVENT.EFFECT_APPLIED:
+			case EVENT.EFFECT_REFRESHED:
+			case EVENT.EFFECT_TICK:
+				index = findEffect(state, target, event[F.STRING]);
+				if (index >= 0) {
+					state.effects[index + 2] = event[F.AMOUNT];
+				}
+				else {
+					state.effects.push(target, event[F.STRING], event[F.AMOUNT]);
+				}
+				break;
+			case EVENT.EFFECT_END:
+				index = findEffect(state, target, event[F.STRING]);
+				if (index >= 0) {
+					state.effects.splice(index, 3);
+				}
+				break;
+			}
+		}
+
+		/*
+		 * The position in the battle is the number of events that were applied (0 to
+		 * the number of events). The state at every "interval" events is kept, to go
+		 * back without starting over: a checkpoint is made the first time it is passed.
+		 */
+		var interval = Math.max(256, Math.ceil(eventCount * unitCount * BYTES_PER_UNIT / CHECKPOINT_BUDGET));
+		var checkpoints = [initialState()];
+		var state = cloneState(checkpoints[0]);
+		var position = 0;
+
+		function stepForward() {
+			if (position >= eventCount) {
+				return null;
+			}
+			var event = events[position];
+			applyEvent(state, event);
+			position++;
+			if (position % interval === 0 && checkpoints.length === position / interval) {
+				checkpoints.push(cloneState(state));
+			}
+			return event;
+		}
+
+		function seek(target) {
+			target = Math.max(0, Math.min(eventCount, Math.floor(target)));
+			if (target < position) {
+				var base = Math.floor(target / interval);
+				state = cloneState(checkpoints[base]);
+				position = base * interval;
+			}
+			while (position < target) {
+				stepForward();
+			}
+		}
+
+		/* The first position after "from" at which a round starts, or the end. */
+		function nextRound(from) {
+			for (var i = 0; i < roundStarts.length; i++) {
+				if (roundStarts[i] > from) {
+					return roundStarts[i];
+				}
+			}
+			return eventCount;
+		}
+
+		/* The last position before "from" at which a round starts, or the start. */
+		function previousRound(from) {
+			for (var i = roundStarts.length - 1; i >= 0; i--) {
+				if (roundStarts[i] < from) {
+					return roundStarts[i];
+				}
+			}
+			return 0;
+		}
+
+		return {
+			data: data,
+			eventCount: eventCount,
+			unitCount: unitCount,
+			totalRounds: totalRounds,
+			headerLines: headerLines,
+			eventLines: eventLines,
+			resultLine: resultLine,
+			buildText: buildText,
+			timeline: {
+				getState: function () { return state; },
+				getPosition: function () { return position; },
+				stepForward: stepForward,
+				seek: seek,
+				nextRound: nextRound,
+				previousRound: previousRound,
+				roundAt: function (at) { return at > 0 ? events[at - 1][F.ROUND] : 0; },
+				/* How far the battle is, in rounds: 0 at the start, and a round more for each one that is over. */
+				roundProgress: function (at) {
+					if (at <= 0) {
+						return 0;
+					}
+					var round = events[at - 1][F.ROUND];
+					if (round < 1 || round > roundStarts.length) {
+						return round;
+					}
+					var start = roundStarts[round - 1];
+					var end = round < roundStarts.length ? roundStarts[round] : eventCount;
+					return round - 1 + (at - start) / (end - start);
+				},
+				/* The position at which a round has just started (0 for the start of the battle). */
+				roundStartPosition: function (round) {
+					return (round >= 1 && round <= roundStarts.length) ? roundStarts[round - 1] + 1 : 0;
+				}
+			}
+		};
+	}
+
+	/*
+	 * The metrics of a battle, in one pass over its events. They use the values that
+	 * the events carry and no rule of the game:
+	 *  - Damage and healing are the EFFECTIVE ones: the health of the unit before the
+	 *    event minus its health after it (the nominal amount is not used).
+	 *  - What happens in a turn or an ability is credited to its actor. What happens
+	 *    inside the tick of an effect (the events deeper than the tick, up to the next
+	 *    one that is not) is credited to the unit that applied the effect, or renewed
+	 *    it for the last time, and is counted apart as "effect" damage or healing.
+	 *  - A kill is the death credited like the damage that caused it.
+	 * The series have the state at the end of each round (the round 0 is the start).
+	 */
+	function computeMetrics(data) {
+		var events = data.events;
+		var units = data.units;
+		var strings = data.strings;
+		var teams = data.teams;
+		var eventCount = events.length;
+		var unitCount = units.length;
+		var teamCount = teams.length;
+		var stringCount = Math.max(1, strings.length);
+		var health = new Float64Array(unitCount);
+		var damage = new Float64Array(unitCount);
+		var effectDamage = new Float64Array(unitCount);
+		var taken = new Float64Array(unitCount);
+		var healing = new Float64Array(unitCount);
+		var effectHealing = new Float64Array(unitCount);
+		var kills = new Int32Array(unitCount);
+		var applications = new Int32Array(unitCount);
+		var deathRound = new Int32Array(unitCount);
+		var firstEvent = new Int32Array(unitCount);
+		var alive = [];
+		var teamHealth = [];
+		var initial = [];
+		var aliveSeries = [];
+		var healthSeries = [];
+		var appliers = new Map();
+		var i;
+		var t;
+		for (t = 0; t < teamCount; t++) {
+			alive.push(0);
+			teamHealth.push(0);
+			initial.push(0);
+		}
+		for (i = 0; i < unitCount; i++) {
+			health[i] = units[i][U.HEALTH];
+			deathRound[i] = -1;
+			firstEvent[i] = -1;
+			alive[units[i][U.TEAM]]++;
+			initial[units[i][U.TEAM]]++;
+			teamHealth[units[i][U.TEAM]] += health[i];
+		}
+		function snapshot() {
+			aliveSeries.push(alive.slice());
+			healthSeries.push(teamHealth.slice());
+		}
+		snapshot();
+
+		var scopeDepth = -1;
+		var scopeCreditor = -1;
+		for (var k = 0; k < eventCount; k++) {
+			var event = events[k];
+			var type = event[F.TYPE];
+			var actor = event[F.ACTOR];
+			var target = event[F.TARGET];
+			var validTarget = target >= 0 && target < unitCount;
+			var effectKey = target * stringCount + Math.max(0, event[F.STRING]);
+			if (actor >= 0 && actor < unitCount && firstEvent[actor] < 0) {
+				firstEvent[actor] = k;
+			}
+			if (validTarget && firstEvent[target] < 0) {
+				firstEvent[target] = k;
+			}
+			if (scopeDepth >= 0 && event[F.DEPTH] <= scopeDepth) {
+				scopeDepth = -1;
+			}
+			var inEffect = scopeDepth >= 0;
+			var creditor = inEffect ? scopeCreditor : actor;
+			var credited = creditor >= 0 && creditor < unitCount;
+			var amount;
+			switch (type) {
+			case EVENT.ROUND_START:
+				while (aliveSeries.length < event[F.ROUND]) {
+					snapshot();
+				}
+				break;
+			case EVENT.EFFECT_APPLIED:
+			case EVENT.EFFECT_REFRESHED:
+				if (validTarget) {
+					appliers.set(effectKey, actor);
+				}
+				if (actor >= 0 && actor < unitCount) {
+					applications[actor]++;
+				}
+				break;
+			case EVENT.EFFECT_TICK:
+				scopeDepth = event[F.DEPTH];
+				scopeCreditor = appliers.has(effectKey) ? appliers.get(effectKey) : actor;
+				break;
+			case EVENT.DAMAGE:
+				if (validTarget) {
+					amount = Math.max(0, health[target] - event[F.HEALTH]);
+					health[target] = event[F.HEALTH];
+					teamHealth[units[target][U.TEAM]] -= amount;
+					taken[target] += amount;
+					if (credited) {
+						if (inEffect) {
+							effectDamage[creditor] += amount;
+						}
+						else {
+							damage[creditor] += amount;
+						}
+					}
+				}
+				break;
+			case EVENT.HEAL:
+				if (validTarget) {
+					amount = Math.max(0, event[F.HEALTH] - health[target]);
+					health[target] = event[F.HEALTH];
+					teamHealth[units[target][U.TEAM]] += amount;
+					if (credited) {
+						if (inEffect) {
+							effectHealing[creditor] += amount;
+						}
+						else {
+							healing[creditor] += amount;
+						}
+					}
+				}
+				break;
+			case EVENT.DEATH:
+				if (validTarget) {
+					alive[units[target][U.TEAM]]--;
+					deathRound[target] = event[F.ROUND];
+					if (credited) {
+						kills[creditor]++;
+					}
+				}
+				break;
+			}
+		}
+		var rounds = eventCount > 0 ? events[eventCount - 1][F.ROUND] : 0;
+		while (aliveSeries.length <= rounds) {
+			snapshot();
+		}
+
+		var teamStats = [];
+		var totals = { damage: 0, effectDamage: 0, healing: 0, effectHealing: 0, kills: 0 };
+		for (t = 0; t < teamCount; t++) {
+			teamStats.push({ name: teams[t], initial: initial[t], alive: alive[t], dead: initial[t] - alive[t], damage: 0, effectDamage: 0, healing: 0, effectHealing: 0, kills: 0, effectsApplied: 0 });
+		}
+		for (i = 0; i < unitCount; i++) {
+			var stats = teamStats[units[i][U.TEAM]];
+			stats.damage += damage[i];
+			stats.effectDamage += effectDamage[i];
+			stats.healing += healing[i];
+			stats.effectHealing += effectHealing[i];
+			stats.kills += kills[i];
+			stats.effectsApplied += applications[i];
+			totals.damage += damage[i];
+			totals.effectDamage += effectDamage[i];
+			totals.healing += healing[i];
+			totals.effectHealing += effectHealing[i];
+			totals.kills += kills[i];
+		}
+		return {
+			rounds: rounds,
+			teams: teamStats,
+			totals: totals,
+			damage: damage,
+			effectDamage: effectDamage,
+			taken: taken,
+			healing: healing,
+			effectHealing: effectHealing,
+			kills: kills,
+			applications: applications,
+			deathRound: deathRound,
+			firstEvent: firstEvent,
+			aliveSeries: aliveSeries,
+			healthSeries: healthSeries
+		};
+	}
+
+	return { EVENT: EVENT, F: F, U: U, create: create, computeMetrics: computeMetrics };
+})();
+
+/* The page: the battlefield, the log and the controls. */
+function startUi(replay) {
+	var data = replay.data;
+	var events = data.events;
+	var units = data.units;
+	var teams = data.teams;
+	var strings = data.strings;
+	var timeline = replay.timeline;
+	var eventCount = replay.eventCount;
+	var unitCount = units.length;
+	var F = Replay.F;
+	var U = Replay.U;
+	var EVENT = Replay.EVENT;
+
+	/*
+	 * The colors of the teams: the ones of Okabe and Ito, which tell apart for the common
+	 * kinds of color blindness, darkened where they were too light to be seen over the
+	 * white of the field and the charts (all are at least 3:1 over it).
+	 */
+	var PALETTE = ["#0072B2", "#D55E00", "#009E73", "#B84A87", "#A86F00", "#6A3D9A", "#7A7A00", "#707070"];
+	var EFFECT_PALETTE = ["#7B2CBF", "#C1121F", "#2A9D8F", "#E76F51", "#264653", "#BC6C25", "#3A86FF", "#FF006E"];
+	var HEALTH_COLORS = { good: "#2E9E4F", warning: "#E0B400", bad: "#D13B3B" };
+	var MOVE_MILLISECONDS = 150;
+	var FLASH_MILLISECONDS = 420;
+	var LOG_WINDOW = 200;
+	var MAX_STEPS_PER_FRAME = 8;
+	var motionQuery = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+	var reducedMotion = !!(motionQuery && motionQuery.matches);
+	if (motionQuery && motionQuery.addEventListener) {
+		motionQuery.addEventListener("change", function () {
+			reducedMotion = motionQuery.matches;
+		});
+	}
+
+	function byId(id) {
+		return document.getElementById(id);
+	}
+
+	document.title = "RPG battle replay - seed " + data.seed;
+
+	var banner = byId("banner");
+	var meta = byId("meta");
+	var canvas = byId("field-canvas");
+	var context = canvas.getContext("2d");
+	var legend = byId("legend");
+	var logElement = byId("log");
+	var tooltip = byId("tooltip");
+	var playButton = byId("btn-play");
+	var resetButton = byId("btn-reset");
+	var previousRoundButton = byId("btn-prev-round");
+	var previousEventButton = byId("btn-prev-event");
+	var nextEventButton = byId("btn-next-event");
+	var nextRoundButton = byId("btn-next-round");
+	var speedInput = byId("speed");
+	var speedLabel = byId("speed-label");
+	var progressInput = byId("progress");
+	var roundLabel = byId("round-label");
+	var header = document.querySelector("header");
+	var controls = byId("controls");
+	var help = byId("help");
+	var mainElement = document.querySelector("main");
+
+	function teamColor(team) {
+		return PALETTE[team % PALETTE.length];
+	}
+
+	/* Black or white, whichever reads better over a color. */
+	function inkFor(color) {
+		var red = parseInt(color.substr(1, 2), 16);
+		var green = parseInt(color.substr(3, 2), 16);
+		var blue = parseInt(color.substr(5, 2), 16);
+		return (0.299 * red + 0.587 * green + 0.114 * blue) > 150 ? "#111111" : "#FFFFFF";
+	}
+
+	function addMeta(label, value, code) {
+		var item = document.createElement("span");
+		var strong = document.createElement("strong");
+		strong.textContent = label + ": ";
+		item.appendChild(strong);
+		item.appendChild(document.createTextNode(value));
+		if (code) {
+			item.appendChild(document.createTextNode(" (reproduce it with "));
+			var element = document.createElement("code");
+			element.textContent = code;
+			item.appendChild(element);
+			item.appendChild(document.createTextNode(")"));
+		}
+		meta.appendChild(item);
+	}
+
+	function resultText() {
+		var line = replay.resultLine();
+		if (!line) {
+			return "the battle did not end";
+		}
+		return line + " (after " + data.result.rounds + " " + (data.result.rounds === 1 ? "round" : "rounds") + ")";
+	}
+
+	addMeta("Seed", String(data.seed), "--seed " + data.seed);
+	addMeta("Arena", data.arena ? (data.arena[0] + "x" + data.arena[1]) : "unbounded");
+	addMeta("Units", String(unitCount));
+	addMeta("Result", resultText());
+	if (data.error) {
+		banner.hidden = false;
+		banner.textContent = "The simulation was aborted: " + data.error;
+	}
+
+	/* The part of the battlefield to draw, in cells. */
+	function computeWorld() {
+		if (data.arena) {
+			return { minX: 0, minY: 0, width: Math.max(1, data.arena[0]), height: Math.max(1, data.arena[1]) };
+		}
+		var minX = Infinity;
+		var minY = Infinity;
+		var maxX = -Infinity;
+		var maxY = -Infinity;
+		function include(x, y) {
+			minX = Math.min(minX, x);
+			minY = Math.min(minY, y);
+			maxX = Math.max(maxX, x);
+			maxY = Math.max(maxY, y);
+		}
+		var i;
+		for (i = 0; i < unitCount; i++) {
+			include(units[i][U.X], units[i][U.Y]);
+		}
+		for (i = 0; i < eventCount; i++) {
+			if (events[i][F.TYPE] === EVENT.MOVE) {
+				include(events[i][F.FROM_X], events[i][F.FROM_Y]);
+				include(events[i][F.X], events[i][F.Y]);
+			}
+		}
+		if (minX === Infinity) {
+			minX = 0;
+			minY = 0;
+			maxX = 0;
+			maxY = 0;
+		}
+		var width = maxX - minX + 1;
+		var height = maxY - minY + 1;
+		var margin = Math.max(2, Math.ceil(Math.max(width, height) * 0.05));
+		return { minX: minX - margin, minY: minY - margin, width: width + 2 * margin, height: height + 2 * margin };
+	}
+
+	var world = computeWorld();
+	var scale = 1;
+	var cssWidth = 1;
+	var cssHeight = 1;
+	var ratio = 1;
+	var radius = 4;
+
+	/* Fits the canvas to the room there is, keeping the proportion of the battlefield. */
+	function layout() {
+		var room = byId("field").clientWidth || 600;
+		var used = header.offsetHeight + banner.offsetHeight + legend.offsetHeight + help.offsetHeight + controls.offsetHeight + 56;
+		var height = Math.max(280, window.innerHeight - used);
+		scale = Math.min(room / world.width, height / world.height, 48);
+		cssWidth = Math.max(1, Math.floor(world.width * scale));
+		cssHeight = Math.max(1, Math.floor(world.height * scale));
+		ratio = window.devicePixelRatio || 1;
+		while (cssWidth * cssHeight * ratio * ratio > 16e6 && ratio > 1) {
+			ratio = Math.max(1, ratio - 0.5);
+		}
+		canvas.width = Math.max(1, Math.round(cssWidth * ratio));
+		canvas.height = Math.max(1, Math.round(cssHeight * ratio));
+		canvas.style.width = cssWidth + "px";
+		canvas.style.height = cssHeight + "px";
+		radius = Math.max(1.5, Math.min(scale * 0.42, 20));
+	}
+
+	function screenX(x) {
+		return (x + 0.5 - world.minX) * scale;
+	}
+
+	function screenY(y) {
+		return (y + 0.5 - world.minY) * scale;
+	}
+
+	/* Playing: the speed is in events per second. */
+	var playing = false;
+	var speed = 10;
+	var accumulated = 0;
+	var lastFrame = 0;
+	var frameRequest = 0;
+	var dirty = true;
+	var moves = new Map();
+	var flashes = new Map();
+	var hovered = -1;
+	var mouseX = 0;
+	var mouseY = 0;
+	var displayX = 0;
+	var displayY = 0;
+
+	/* Where a unit is drawn, in cells: moving units are on their way. */
+	function placeUnit(id, now) {
+		var state = timeline.getState();
+		displayX = state.x[id];
+		displayY = state.y[id];
+		var move = moves.get(id);
+		if (move) {
+			var progress = (now - move.start) / MOVE_MILLISECONDS;
+			if (progress >= 1) {
+				moves.delete(id);
+			}
+			else if (progress > 0) {
+				var eased = progress * (2 - progress);
+				displayX = move.fromX + (move.toX - move.fromX) * eased;
+				displayY = move.fromY + (move.toY - move.fromY) * eased;
+			}
+			else {
+				displayX = move.fromX;
+				displayY = move.fromY;
+			}
+		}
+	}
+
+	function healthColor(health, maxHealth) {
+		var fraction = maxHealth > 0 ? health / maxHealth : 0;
+		if (fraction > 0.5) {
+			return HEALTH_COLORS.good;
+		}
+		return fraction > 0.25 ? HEALTH_COLORS.warning : HEALTH_COLORS.bad;
+	}
+
+	function drawGrid() {
+		var step = Math.max(1, Math.ceil(14 / scale));
+		var x0 = Math.ceil(world.minX / step) * step;
+		var y0 = Math.ceil(world.minY / step) * step;
+		context.beginPath();
+		for (var x = x0; x <= world.minX + world.width; x += step) {
+			var px = Math.round((x - world.minX) * scale) + 0.5;
+			context.moveTo(px, 0);
+			context.lineTo(px, cssHeight);
+		}
+		for (var y = y0; y <= world.minY + world.height; y += step) {
+			var py = Math.round((y - world.minY) * scale) + 0.5;
+			context.moveTo(0, py);
+			context.lineTo(cssWidth, py);
+		}
+		context.strokeStyle = "rgba(29, 35, 48, 0.09)";
+		context.lineWidth = 1;
+		context.stroke();
+		if (data.arena) {
+			context.strokeStyle = "rgba(29, 35, 48, 0.55)";
+			context.lineWidth = 2;
+			context.strokeRect(1, 1, cssWidth - 2, cssHeight - 2);
+		}
+	}
+
+	/* Draws a ring around a unit. */
+	function ring(id, now, color, width, grow, dashed) {
+		placeUnit(id, now);
+		context.beginPath();
+		context.arc(screenX(displayX), screenY(displayY), radius + grow, 0, 2 * Math.PI);
+		context.strokeStyle = color;
+		context.lineWidth = width;
+		context.setLineDash(dashed ? [3, 3] : []);
+		context.stroke();
+		context.setLineDash([]);
+	}
+
+	function draw(now) {
+		var state = timeline.getState();
+		var many = radius < 3.5;
+		var i;
+		var t;
+		context.setTransform(ratio, 0, 0, ratio, 0, 0);
+		context.clearRect(0, 0, cssWidth, cssHeight);
+		drawGrid();
+		/* The units, team by team (with the same color), the dead ones faded and crossed out. */
+		for (var pass = 0; pass < 2; pass++) {
+			var wantAlive = (pass === 1);
+			context.globalAlpha = wantAlive ? 1 : 0.35;
+			for (t = 0; t < teams.length; t++) {
+				context.fillStyle = teamColor(t);
+				context.strokeStyle = "rgba(0, 0, 0, 0.55)";
+				context.lineWidth = 1;
+				if (many) {
+					context.beginPath();
+				}
+				for (i = 0; i < unitCount; i++) {
+					if (units[i][U.TEAM] !== t || (state.alive[i] === 1) !== wantAlive) {
+						continue;
+					}
+					placeUnit(i, now);
+					var cx = screenX(displayX);
+					var cy = screenY(displayY);
+					if (many) {
+						context.moveTo(cx + radius, cy);
+						context.arc(cx, cy, radius, 0, 2 * Math.PI);
+					}
+					else {
+						context.beginPath();
+						context.arc(cx, cy, radius, 0, 2 * Math.PI);
+						context.fill();
+						context.stroke();
+					}
+				}
+				if (many) {
+					context.fill();
+				}
+			}
+		}
+		context.globalAlpha = 1;
+		if (!many) {
+			context.textAlign = "center";
+			context.textBaseline = "middle";
+			if (radius >= 7) {
+				context.font = "bold " + Math.floor(radius * 1.1) + "px system-ui, sans-serif";
+			}
+			for (i = 0; i < unitCount; i++) {
+				placeUnit(i, now);
+				var ux = screenX(displayX);
+				var uy = screenY(displayY);
+				if (state.alive[i] !== 1) {
+					if (radius >= 4) {
+						context.globalAlpha = 0.8;
+						context.beginPath();
+						context.moveTo(ux - radius * 0.7, uy - radius * 0.7);
+						context.lineTo(ux + radius * 0.7, uy + radius * 0.7);
+						context.moveTo(ux + radius * 0.7, uy - radius * 0.7);
+						context.lineTo(ux - radius * 0.7, uy + radius * 0.7);
+						context.strokeStyle = "#1D2330";
+						context.lineWidth = 2;
+						context.stroke();
+						context.globalAlpha = 1;
+					}
+					continue;
+				}
+				if (radius >= 7) {
+					context.fillStyle = inkFor(teamColor(units[i][U.TEAM]));
+					context.fillText(String(units[i][U.DECLARATION]).charAt(0).toUpperCase(), ux, uy + 0.5);
+				}
+				if (radius >= 4) {
+					var barWidth = 2 * radius + 2;
+					var barHeight = Math.max(2, Math.round(radius * 0.28));
+					var barTop = uy - radius - barHeight - 2;
+					var fraction = units[i][U.MAX_HEALTH] > 0 ? Math.max(0, Math.min(1, state.health[i] / units[i][U.MAX_HEALTH])) : 0;
+					context.fillStyle = "rgba(29, 35, 48, 0.45)";
+					context.fillRect(ux - barWidth / 2, barTop, barWidth, barHeight);
+					context.fillStyle = healthColor(state.health[i], units[i][U.MAX_HEALTH]);
+					context.fillRect(ux - barWidth / 2, barTop, barWidth * fraction, barHeight);
+				}
+			}
+		}
+		/* The effects that are acting: a dot of the color of the effect (with its initial if there is room). */
+		var dots = new Uint8Array(unitCount);
+		var dotRadius = Math.max(1.8, radius * 0.34);
+		for (i = 0; i < state.effects.length; i += 3) {
+			var unit = state.effects[i];
+			if (state.alive[unit] !== 1) {
+				continue;
+			}
+			placeUnit(unit, now);
+			var dx = screenX(displayX) + radius * 0.8 - dots[unit] * dotRadius * 2.2;
+			var dy = screenY(displayY) - radius * 0.8;
+			dots[unit]++;
+			context.beginPath();
+			context.arc(dx, dy, dotRadius, 0, 2 * Math.PI);
+			context.fillStyle = EFFECT_PALETTE[state.effects[i + 1] % EFFECT_PALETTE.length];
+			context.fill();
+			context.strokeStyle = "#FFFFFF";
+			context.lineWidth = 1;
+			context.stroke();
+			if (dotRadius >= 4.5) {
+				context.fillStyle = "#FFFFFF";
+				context.font = "bold " + Math.floor(dotRadius * 1.3) + "px system-ui, sans-serif";
+				context.fillText(String(strings[state.effects[i + 1]]).charAt(0).toUpperCase(), dx, dy + 0.5);
+			}
+		}
+		/* The flashes of the hits and the heals. */
+		flashes.forEach(function (flash, id) {
+			var age = (now - flash.start) / FLASH_MILLISECONDS;
+			if (age >= 1) {
+				flashes.delete(id);
+				return;
+			}
+			context.globalAlpha = 1 - age;
+			ring(id, now, flash.color, 3, 2 + 6 * age, false);
+			context.globalAlpha = 1;
+		});
+		/* The unit of the current event, the one it is aimed at, and the one under the mouse. */
+		var current = timeline.getPosition() - 1;
+		if (current >= 0 && !many) {
+			var event = events[current];
+			if (event[F.TARGET] >= 0 && event[F.TARGET] !== event[F.ACTOR] && event[F.TARGET] < unitCount) {
+				ring(event[F.TARGET], now, "#1D2330", 1.5, 3, true);
+			}
+			if (event[F.ACTOR] >= 0 && event[F.ACTOR] < unitCount) {
+				ring(event[F.ACTOR], now, "#1D2330", 3.5, 3, false);
+				ring(event[F.ACTOR], now, "#FFFFFF", 1.5, 3, false);
+			}
+		}
+		if (hovered >= 0) {
+			ring(hovered, now, "#0B5CAD", 2, 3, false);
+		}
+	}
+
+	function hasAnimations() {
+		return moves.size > 0 || flashes.size > 0;
+	}
+
+	/* ---- The log ---- */
+
+	var windowStart = 0;
+	var windowEnd = 0;
+
+	function rowClass(type) {
+		switch (type) {
+		case EVENT.ROUND_START: return "t-round";
+		case EVENT.BATTLE_END: return "t-end";
+		case EVENT.DEATH: return "t-death";
+		case EVENT.SKIP: return "t-skip";
+		case EVENT.LOG: return "t-log";
+		}
+		return "t-event";
+	}
+
+	function buildRow(index) {
+		var event = events[index];
+		var row = document.createElement("div");
+		row.className = "row " + rowClass(event[F.TYPE]);
+		row.setAttribute("data-index", String(index));
+		var lines = replay.eventLines(event);
+		for (var k = 0; k < lines.length; k++) {
+			var line = document.createElement("div");
+			line.className = "line";
+			line.textContent = lines[k];
+			row.appendChild(line);
+		}
+		return row;
+	}
+
+	/* Only the events around the one that matters are in the page, whatever the size of the battle. */
+	function rebuildLog(center) {
+		windowStart = Math.max(0, center - LOG_WINDOW / 2);
+		windowEnd = Math.min(eventCount, windowStart + LOG_WINDOW);
+		windowStart = Math.max(0, windowEnd - LOG_WINDOW);
+		var fragment = document.createDocumentFragment();
+		for (var i = windowStart; i < windowEnd; i++) {
+			fragment.appendChild(buildRow(i));
+		}
+		logElement.textContent = "";
+		logElement.appendChild(fragment);
+	}
+
+	function updateLog() {
+		var current = timeline.getPosition() - 1;
+		var focus = Math.max(current, 0);
+		var outside = focus < windowStart || focus >= windowEnd;
+		var nearEdge = (windowStart > 0 && focus < windowStart + 25) || (windowEnd < eventCount && focus >= windowEnd - 25);
+		if (eventCount > 0 && (outside || nearEdge)) {
+			rebuildLog(focus);
+		}
+		var rows = logElement.children;
+		for (var k = 0; k < rows.length; k++) {
+			var index = windowStart + k;
+			rows[k].classList.toggle("future", index > current);
+			rows[k].classList.toggle("current", index === current);
+		}
+		var row = rows[current - windowStart];
+		if (current >= 0 && row) {
+			logElement.scrollTop = row.offsetTop - logElement.clientHeight / 2 + row.offsetHeight / 2;
+		}
+		else {
+			logElement.scrollTop = 0;
+		}
+	}
+
+	/* ---- The metrics (the second tab of the side panel) ---- */
+
+	var metricsView = byId("metrics-view");
+	var logView = byId("log-view");
+	var tabLog = byId("tab-log");
+	var tabMetrics = byId("tab-metrics");
+	var CHART_HEIGHT = 190;
+	var UNIT_ROWS = 50;
+	var UNIT_ROWS_MAX = 1000;
+	var metrics = null;
+	var metricsShown = false;
+	var charts = [];
+	var cursorRound = 0;
+
+	try {
+		var metricsStart = performance.now();
+		metrics = Replay.computeMetrics(data);
+		metricsView.setAttribute("data-compute-ms", (performance.now() - metricsStart).toFixed(1));
+	}
+	catch (failure) {
+		metrics = null;
+	}
+
+	function element(tag, className, text) {
+		var node = document.createElement(tag);
+		if (className) {
+			node.className = className;
+		}
+		if (text !== undefined) {
+			node.textContent = text;
+		}
+		return node;
+	}
+
+	function swatch(color, extraClass) {
+		var node = element("span", extraClass ? "swatch " + extraClass : "swatch");
+		if (color) {
+			node.style.background = color;
+		}
+		return node;
+	}
+
+	function addSection(title) {
+		var section = element("section");
+		section.appendChild(element("h3", "", title));
+		metricsView.appendChild(section);
+		return section;
+	}
+
+	function addLegend(section, entries) {
+		var box = element("div", "chart-legend");
+		for (var i = 0; i < entries.length; i++) {
+			var item = element("span");
+			item.appendChild(entries[i].mark);
+			item.appendChild(document.createTextNode(entries[i].label));
+			box.appendChild(item);
+		}
+		section.appendChild(box);
+	}
+
+	function teamEntries() {
+		var entries = [];
+		for (var t = 0; t < teams.length; t++) {
+			entries.push({ mark: swatch(teamColor(t)), label: teams[t] });
+		}
+		return entries;
+	}
+
+	/* A step for an axis, in the 1, 2, 5, 10... sequence. */
+	function niceStep(raw) {
+		var power = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
+		var fraction = raw / power;
+		return (fraction <= 1 ? 1 : (fraction <= 2 ? 2 : (fraction <= 5 ? 5 : 10))) * power;
+	}
+
+	/* The top of the vertical axis, and the distance between its marks (the values are whole numbers). */
+	function niceScale(max, marks) {
+		if (!(max > 0)) {
+			return { max: 1, step: 1 };
+		}
+		var step = Math.max(1, niceStep(max / marks));
+		return { max: Math.ceil(max / step - 1e-9) * step, step: step };
+	}
+
+	function chartWidth() {
+		var width = metricsView.clientWidth - 24;
+		return width > 160 ? Math.floor(width) : 560;
+	}
+
+	/* Sizes a canvas for the sharpness of the screen, and gives its context in css pixels. */
+	function prepareCanvas(canvas, width, height) {
+		var density = window.devicePixelRatio || 1;
+		canvas.width = Math.round(width * density);
+		canvas.height = Math.round(height * density);
+		canvas.style.width = width + "px";
+		canvas.style.height = height + "px";
+		var c = canvas.getContext("2d");
+		c.setTransform(density, 0, 0, density, 0, 0);
+		return c;
+	}
+
+	function goToRound(round) {
+		pause();
+		seek(timeline.roundStartPosition(round));
+	}
+
+	/* The axes that the charts share: the whole numbers on the left, and the marks of the rounds below (if the chart has rounds). */
+	function drawAxes(c, plot, width, height, scale, rounds, xOf) {
+		c.font = "11px system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif";
+		c.lineWidth = 1;
+		c.textAlign = "right";
+		c.textBaseline = "middle";
+		for (var value = 0; value <= scale.max + scale.step / 2; value += scale.step) {
+			var y = Math.round(plot.top + (height - plot.top - plot.bottom) * (1 - value / scale.max)) + 0.5;
+			c.beginPath();
+			c.moveTo(plot.left, y);
+			c.lineTo(width - plot.right, y);
+			c.strokeStyle = "rgba(29, 35, 48, 0.14)";
+			c.stroke();
+			c.fillStyle = "#566074";
+			c.fillText(String(value), plot.left - 6, y);
+		}
+		if (rounds >= 0 && xOf) {
+			c.textAlign = "center";
+			c.textBaseline = "top";
+			var every = niceStep(Math.max(1, rounds / 8));
+			for (var round = 0; round <= rounds; round += every) {
+				var x = Math.round(xOf(round)) + 0.5;
+				c.beginPath();
+				c.moveTo(x, height - plot.bottom);
+				c.lineTo(x, height - plot.bottom + 4);
+				c.strokeStyle = "#566074";
+				c.stroke();
+				c.fillStyle = "#566074";
+				c.fillText(String(round), x, height - plot.bottom + 6);
+			}
+		}
+		c.beginPath();
+		c.moveTo(plot.left + 0.5, plot.top);
+		c.lineTo(plot.left + 0.5, height - plot.bottom + 0.5);
+		c.lineTo(width - plot.right, height - plot.bottom + 0.5);
+		c.strokeStyle = "#566074";
+		c.stroke();
+	}
+
+	/*
+	 * A line chart with a line for each team: rows[r][t] is the value of the team t at the
+	 * end of the round r (the round 0 is the start of the battle). The dashed line is how
+	 * far the playback is, the mouse says the values of a round and a click goes to its start.
+	 */
+	function addLineChart(id, title, description, rows) {
+		var section = addSection(title);
+		addLegend(section, teamEntries());
+		var canvas = element("canvas", "chart");
+		canvas.id = id;
+		canvas.setAttribute("role", "img");
+		canvas.setAttribute("aria-label", description);
+		canvas.title = "Click to go to the start of a round";
+		section.appendChild(canvas);
+		var rounds = rows.length - 1;
+		var max = 0;
+		var r;
+		var t;
+		for (r = 0; r <= rounds; r++) {
+			for (t = 0; t < teams.length; t++) {
+				max = Math.max(max, rows[r][t]);
+			}
+		}
+		var scale = niceScale(max, 4);
+		var plot = { left: 44, right: 14, top: 10, bottom: 26 };
+		var width = 560;
+		var hover = -1;
+
+		function xOf(round) {
+			var inner = width - plot.left - plot.right;
+			return plot.left + (rounds === 0 ? inner / 2 : inner * round / rounds);
+		}
+
+		function yOf(value) {
+			return plot.top + (CHART_HEIGHT - plot.top - plot.bottom) * (1 - value / scale.max);
+		}
+
+		function draw() {
+			width = chartWidth();
+			var c = prepareCanvas(canvas, width, CHART_HEIGHT);
+			drawAxes(c, plot, width, CHART_HEIGHT, scale, rounds, xOf);
+			for (var team = 0; team < teams.length; team++) {
+				c.beginPath();
+				for (var round = 0; round <= rounds; round++) {
+					if (round === 0) {
+						c.moveTo(xOf(round), yOf(rows[round][team]));
+					}
+					else {
+						c.lineTo(xOf(round), yOf(rows[round][team]));
+					}
+				}
+				c.strokeStyle = teamColor(team);
+				c.lineWidth = 2;
+				c.lineJoin = "round";
+				c.stroke();
+				if (rounds <= 40) {
+					c.fillStyle = teamColor(team);
+					for (var point = 0; point <= rounds; point++) {
+						c.beginPath();
+						c.arc(xOf(point), yOf(rows[point][team]), 2.5, 0, 2 * Math.PI);
+						c.fill();
+					}
+				}
+			}
+			if (cursorRound >= 0 && cursorRound <= rounds) {
+				var x = Math.round(xOf(cursorRound)) + 0.5;
+				c.beginPath();
+				c.setLineDash([4, 3]);
+				c.moveTo(x, plot.top);
+				c.lineTo(x, CHART_HEIGHT - plot.bottom);
+				c.strokeStyle = "#1d2330";
+				c.lineWidth = 1.5;
+				c.stroke();
+				c.setLineDash([]);
+			}
+			if (hover >= 0) {
+				c.beginPath();
+				c.moveTo(Math.round(xOf(hover)) + 0.5, plot.top);
+				c.lineTo(Math.round(xOf(hover)) + 0.5, CHART_HEIGHT - plot.bottom);
+				c.strokeStyle = "rgba(29, 35, 48, 0.35)";
+				c.lineWidth = 1;
+				c.stroke();
+				for (var each = 0; each < teams.length; each++) {
+					c.beginPath();
+					c.arc(xOf(hover), yOf(rows[hover][each]), 4, 0, 2 * Math.PI);
+					c.fillStyle = teamColor(each);
+					c.fill();
+					c.strokeStyle = "#ffffff";
+					c.lineWidth = 2;
+					c.stroke();
+				}
+			}
+		}
+
+		function roundAtMouse(event) {
+			if (rounds === 0) {
+				return 0;
+			}
+			var box = canvas.getBoundingClientRect();
+			var x = (event.clientX - box.left) * (width / Math.max(1, box.width));
+			var guess = Math.round((x - plot.left) / (width - plot.left - plot.right) * rounds);
+			return Math.max(0, Math.min(rounds, guess));
+		}
+
+		canvas.addEventListener("mousemove", function (event) {
+			var round = roundAtMouse(event);
+			var lines = [round === 0 ? "Round 0 (the start)" : "Round " + round + " (its end)"];
+			for (var team = 0; team < teams.length; team++) {
+				lines.push(teams[team] + ": " + rows[round][team]);
+			}
+			showLines(lines, event.clientX, event.clientY);
+			if (round !== hover) {
+				hover = round;
+				draw();
+			}
+		});
+		canvas.addEventListener("mouseleave", function () {
+			hover = -1;
+			draw();
+			hideLines();
+		});
+		canvas.addEventListener("click", function (event) {
+			goToRound(roundAtMouse(event));
+		});
+		charts.push(draw);
+	}
+
+	/* Bars of the damage dealt by each team: the damage of its abilities, and over it (striped) the damage of its effects. */
+	function addDamageChart() {
+		var section = addSection("Damage dealt by team");
+		addLegend(section, [{ mark: swatch("#3b4252"), label: "Abilities and turns (solid)" }, { mark: swatch(null, "striped"), label: "Effects (striped)" }]);
+		var canvas = element("canvas", "chart");
+		canvas.id = "chart-damage";
+		canvas.setAttribute("role", "img");
+		canvas.setAttribute("aria-label", "Bars with the damage that each team dealt, with its abilities and with its effects");
+		canvas.style.cursor = "default";
+		section.appendChild(canvas);
+		var max = 0;
+		var t;
+		for (t = 0; t < teams.length; t++) {
+			max = Math.max(max, metrics.teams[t].damage + metrics.teams[t].effectDamage);
+		}
+		var scale = niceScale(max, 4);
+		var plot = { left: 44, right: 14, top: 18, bottom: 28 };
+		var width = 560;
+
+		function slotWidth() {
+			return (width - plot.left - plot.right) / Math.max(1, teams.length);
+		}
+
+		function draw() {
+			width = chartWidth();
+			var c = prepareCanvas(canvas, width, CHART_HEIGHT);
+			var inner = CHART_HEIGHT - plot.top - plot.bottom;
+			drawAxes(c, plot, width, CHART_HEIGHT, scale, -1, null);
+			var slot = slotWidth();
+			var barWidth = Math.min(64, slot * 0.6);
+			c.textAlign = "center";
+			for (var team = 0; team < teams.length; team++) {
+				var stats = metrics.teams[team];
+				var x = plot.left + slot * team + (slot - barWidth) / 2;
+				var solid = inner * stats.damage / scale.max;
+				var striped = inner * stats.effectDamage / scale.max;
+				var bottom = CHART_HEIGHT - plot.bottom;
+				c.fillStyle = teamColor(team);
+				c.fillRect(x, bottom - solid, barWidth, solid);
+				if (striped > 0) {
+					c.save();
+					c.beginPath();
+					c.rect(x, bottom - solid - striped, barWidth, striped);
+					c.clip();
+					c.globalAlpha = 0.22;
+					c.fillStyle = teamColor(team);
+					c.fillRect(x, bottom - solid - striped, barWidth, striped);
+					c.globalAlpha = 1;
+					c.strokeStyle = teamColor(team);
+					c.lineWidth = 2;
+					c.beginPath();
+					for (var offset = -striped; offset < barWidth; offset += 6) {
+						c.moveTo(x + offset, bottom - solid);
+						c.lineTo(x + offset + striped, bottom - solid - striped);
+					}
+					c.stroke();
+					c.restore();
+				}
+				c.fillStyle = "#1d2330";
+				c.textBaseline = "bottom";
+				c.fillText(String(stats.damage + stats.effectDamage), x + barWidth / 2, bottom - solid - striped - 3);
+				c.textBaseline = "top";
+				var name = teams[team];
+				while (name.length > 1 && c.measureText(name).width > slot - 4) {
+					name = name.substring(0, name.length - 1);
+				}
+				c.fillStyle = "#566074";
+				c.fillText(name === teams[team] ? name : name + "...", x + barWidth / 2, bottom + 6);
+			}
+		}
+
+		canvas.addEventListener("mousemove", function (event) {
+			var box = canvas.getBoundingClientRect();
+			var x = (event.clientX - box.left) * (width / Math.max(1, box.width)) - plot.left;
+			var team = Math.floor(x / slotWidth());
+			if (team < 0 || team >= teams.length) {
+				hideLines();
+				return;
+			}
+			var stats = metrics.teams[team];
+			showLines([teams[team], "Abilities and turns: " + stats.damage, "Effects: " + stats.effectDamage, "Total: " + (stats.damage + stats.effectDamage)], event.clientX, event.clientY);
+		});
+		canvas.addEventListener("mouseleave", hideLines);
+		charts.push(draw);
+	}
+
+	function addCard(cards, label, value, sub, color) {
+		var card = element("div", "card");
+		var title = element("div", "label");
+		if (color) {
+			title.appendChild(swatch(color));
+		}
+		title.appendChild(document.createTextNode(label));
+		card.appendChild(title);
+		card.appendChild(element("div", "value", value));
+		if (sub) {
+			card.appendChild(element("div", "sub", sub));
+		}
+		cards.appendChild(card);
+	}
+
+	function addCards() {
+		var cards = element("div", "cards");
+		cards.id = "metrics-cards";
+		addCard(cards, "Result", replay.resultLine() || "The battle did not end");
+		addCard(cards, "Rounds", String(metrics.rounds));
+		for (var t = 0; t < teams.length; t++) {
+			addCard(cards, teams[t], metrics.teams[t].alive + " / " + metrics.teams[t].initial, "alive / at the start", teamColor(t));
+		}
+		addCard(cards, "Damage", String(metrics.totals.damage + metrics.totals.effectDamage), metrics.totals.effectDamage + " by effects");
+		addCard(cards, "Healing", String(metrics.totals.healing + metrics.totals.effectHealing), metrics.totals.effectHealing + " by effects");
+		metricsView.appendChild(cards);
+	}
+
+	function addHeaderCell(row, label, title) {
+		var cell = document.createElement("th");
+		cell.scope = "col";
+		cell.textContent = label;
+		if (title) {
+			cell.title = title;
+		}
+		row.appendChild(cell);
+		return cell;
+	}
+
+	function addNumberCell(row, value) {
+		var cell = row.insertCell();
+		cell.textContent = String(value);
+		return cell;
+	}
+
+	function addTeamTable() {
+		var section = addSection("Teams");
+		var wrap = element("div", "table-wrap");
+		var table = element("table", "metrics");
+		table.id = "team-table";
+		var head = table.createTHead().insertRow();
+		addHeaderCell(head, "Team");
+		addHeaderCell(head, "Units", "Units at the start");
+		addHeaderCell(head, "Alive");
+		addHeaderCell(head, "Dead");
+		addHeaderCell(head, "Damage", "Damage dealt with abilities and turns");
+		addHeaderCell(head, "Effect damage", "Damage dealt by the effects that its units applied");
+		addHeaderCell(head, "Healing", "Healing done with abilities and turns");
+		addHeaderCell(head, "Effect healing", "Healing done by the effects that its units applied");
+		addHeaderCell(head, "Kills", "Deaths credited to its units");
+		addHeaderCell(head, "Effects applied", "Effects applied or renewed by its units");
+		var body = table.createTBody();
+		for (var t = 0; t < teams.length; t++) {
+			var stats = metrics.teams[t];
+			var row = body.insertRow();
+			var first = row.insertCell();
+			first.appendChild(swatch(teamColor(t)));
+			first.appendChild(document.createTextNode(teams[t]));
+			addNumberCell(row, stats.initial);
+			addNumberCell(row, stats.alive);
+			addNumberCell(row, stats.dead);
+			addNumberCell(row, stats.damage);
+			addNumberCell(row, stats.effectDamage);
+			addNumberCell(row, stats.healing);
+			addNumberCell(row, stats.effectHealing);
+			addNumberCell(row, stats.kills);
+			addNumberCell(row, stats.effectsApplied);
+		}
+		wrap.appendChild(table);
+		section.appendChild(wrap);
+	}
+
+	function addUnitTable() {
+		var columns = [
+			{ key: "name", label: "Unit", numeric: false, title: "", value: function (id) { return units[id][U.NAME]; } },
+			{ key: "team", label: "Team", numeric: false, title: "", value: function (id) { return teams[units[id][U.TEAM]]; } },
+			{ key: "status", label: "Status", numeric: true, title: "Alive, or the round in which it died", value: function (id) { return metrics.deathRound[id] < 0 ? 1e9 : metrics.deathRound[id]; } },
+			{ key: "damage", label: "Damage", numeric: true, title: "Damage dealt with abilities and turns", value: function (id) { return metrics.damage[id]; } },
+			{ key: "effectDamage", label: "Effect damage", numeric: true, title: "Damage dealt by the effects that it applied", value: function (id) { return metrics.effectDamage[id]; } },
+			{ key: "taken", label: "Damage taken", numeric: true, title: "Damage that it suffered, from anyone", value: function (id) { return metrics.taken[id]; } },
+			{ key: "healing", label: "Healing", numeric: true, title: "Healing done with abilities and turns", value: function (id) { return metrics.healing[id]; } },
+			{ key: "effectHealing", label: "Effect healing", numeric: true, title: "Healing done by the effects that it applied", value: function (id) { return metrics.effectHealing[id]; } },
+			{ key: "kills", label: "Kills", numeric: true, title: "Deaths credited to it", value: function (id) { return metrics.kills[id]; } }
+		];
+		var sortColumn = 3;
+		var descending = true;
+		var showAll = false;
+		var order = [];
+		var section = addSection("Units");
+		var wrap = element("div", "table-wrap");
+		var table = element("table", "metrics");
+		table.id = "unit-table";
+		var head = table.createTHead().insertRow();
+		var headers = [];
+		var body = table.createTBody();
+		var more = element("div", "more");
+		var moreButton = element("button", "", "");
+		moreButton.type = "button";
+		moreButton.id = "btn-show-all";
+		var note = element("span");
+		more.appendChild(moreButton);
+		more.appendChild(note);
+
+		function sortUnits() {
+			var column = columns[sortColumn];
+			order = [];
+			for (var id = 0; id < unitCount; id++) {
+				order.push(id);
+			}
+			order.sort(function (a, b) {
+				var left = column.value(a);
+				var right = column.value(b);
+				var result = column.numeric ? left - right : String(left).localeCompare(String(right), undefined, { numeric: true });
+				if (result === 0) {
+					return a - b;
+				}
+				return descending ? -result : result;
+			});
+			for (var k = 0; k < headers.length; k++) {
+				headers[k].setAttribute("aria-sort", k === sortColumn ? (descending ? "descending" : "ascending") : "none");
+			}
+		}
+
+		function render() {
+			var limit = Math.min(unitCount, showAll ? UNIT_ROWS_MAX : UNIT_ROWS);
+			body.textContent = "";
+			for (var k = 0; k < limit; k++) {
+				var id = order[k];
+				var row = body.insertRow();
+				row.className = "clickable";
+				row.setAttribute("data-unit", String(id));
+				row.title = "Click to go to the first event of this unit";
+				row.insertCell().textContent = units[id][U.NAME];
+				var teamCell = row.insertCell();
+				teamCell.appendChild(swatch(teamColor(units[id][U.TEAM])));
+				teamCell.appendChild(document.createTextNode(teams[units[id][U.TEAM]]));
+				var statusCell = row.insertCell();
+				statusCell.style.textAlign = "right";
+				statusCell.textContent = metrics.deathRound[id] < 0 ? "alive" : "died in round " + metrics.deathRound[id];
+				addNumberCell(row, metrics.damage[id]);
+				addNumberCell(row, metrics.effectDamage[id]);
+				addNumberCell(row, metrics.taken[id]);
+				addNumberCell(row, metrics.healing[id]);
+				addNumberCell(row, metrics.effectHealing[id]);
+				addNumberCell(row, metrics.kills[id]);
+			}
+			more.hidden = unitCount <= UNIT_ROWS;
+			moreButton.textContent = showAll ? "Show only the first " + UNIT_ROWS : "Show all (" + Math.min(unitCount, UNIT_ROWS_MAX) + ")";
+			note.textContent = (showAll && unitCount > UNIT_ROWS_MAX) ? "Showing the first " + UNIT_ROWS_MAX + " of " + unitCount + " units." : (showAll ? "" : "Showing " + UNIT_ROWS + " of " + unitCount + " units.");
+		}
+
+		columns.forEach(function (column, index) {
+			var cell = addHeaderCell(head, "", column.title);
+			var button = element("button", "sort", column.label);
+			button.type = "button";
+			button.addEventListener("click", function (event) {
+				if (sortColumn === index) {
+					descending = !descending;
+				}
+				else {
+					sortColumn = index;
+					descending = column.numeric;
+				}
+				sortUnits();
+				render();
+				release(event);
+			});
+			cell.appendChild(button);
+			headers.push(cell);
+		});
+		moreButton.addEventListener("click", function (event) {
+			showAll = !showAll;
+			render();
+			release(event);
+		});
+		body.addEventListener("click", function (event) {
+			var row = event.target && event.target.closest ? event.target.closest("tr") : null;
+			if (row) {
+				var first = metrics.firstEvent[Number(row.getAttribute("data-unit"))];
+				if (first >= 0) {
+					pause();
+					seek(first + 1);
+				}
+			}
+		});
+		sortUnits();
+		render();
+		wrap.appendChild(table);
+		section.appendChild(wrap);
+		section.appendChild(more);
+	}
+
+	function buildMetrics() {
+		if (metrics === null) {
+			metricsView.appendChild(element("p", "", "The metrics could not be computed."));
+			return;
+		}
+		addCards();
+		addLineChart("chart-alive", "Units alive", "Lines with the units alive of each team at the end of each round", metrics.aliveSeries);
+		addLineChart("chart-health", "Total health", "Lines with the sum of the health of the units alive of each team at the end of each round", metrics.healthSeries);
+		addDamageChart();
+		addTeamTable();
+		addUnitTable();
+	}
+
+	/* The charts are drawn when the tab is shown (before it they have no size), and when the playback moves on. */
+	function drawCharts() {
+		cursorRound = timeline.roundProgress(timeline.getPosition());
+		for (var i = 0; i < charts.length; i++) {
+			charts[i]();
+		}
+	}
+
+	function updateMetricsCursor() {
+		if (metricsShown && metrics && timeline.roundProgress(timeline.getPosition()) !== cursorRound) {
+			drawCharts();
+		}
+	}
+
+	function selectTab(showMetrics, focus) {
+		metricsShown = showMetrics;
+		logView.hidden = showMetrics;
+		metricsView.hidden = !showMetrics;
+		tabLog.setAttribute("aria-selected", String(!showMetrics));
+		tabMetrics.setAttribute("aria-selected", String(showMetrics));
+		tabLog.tabIndex = showMetrics ? -1 : 0;
+		tabMetrics.tabIndex = showMetrics ? 0 : -1;
+		mainElement.classList.toggle("wide", showMetrics);
+		if (focus) {
+			(showMetrics ? tabMetrics : tabLog).focus();
+		}
+		layout();
+		dirty = true;
+		schedule();
+		if (showMetrics) {
+			drawCharts();
+		}
+		else {
+			updateLog();
+		}
+	}
+
+	buildMetrics();
+
+	/* ---- The controls ---- */
+
+	function updateLegend() {
+		var state = timeline.getState();
+		var alive = [];
+		var total = [];
+		var t;
+		for (t = 0; t < teams.length; t++) {
+			alive.push(0);
+			total.push(0);
+		}
+		for (var i = 0; i < unitCount; i++) {
+			total[units[i][U.TEAM]]++;
+			if (state.alive[i] === 1) {
+				alive[units[i][U.TEAM]]++;
+			}
+		}
+		legend.textContent = "";
+		for (t = 0; t < teams.length; t++) {
+			var item = document.createElement("span");
+			var swatch = document.createElement("span");
+			swatch.className = "swatch";
+			swatch.style.background = teamColor(t);
+			item.appendChild(swatch);
+			item.appendChild(document.createTextNode(teams[t] + ": " + alive[t] + "/" + total[t] + " alive"));
+			legend.appendChild(item);
+		}
+	}
+
+	function updateControls() {
+		var position = timeline.getPosition();
+		progressInput.max = String(eventCount);
+		progressInput.value = String(position);
+		roundLabel.textContent = "Round " + timeline.roundAt(position) + " / " + replay.totalRounds;
+		playButton.textContent = playing ? "Pause" : "Play";
+		previousEventButton.disabled = position <= 0;
+		previousRoundButton.disabled = position <= 0;
+		resetButton.disabled = position <= 0;
+		nextEventButton.disabled = position >= eventCount;
+		nextRoundButton.disabled = position >= eventCount;
+		playButton.disabled = eventCount === 0;
+		progressInput.disabled = eventCount === 0;
+	}
+
+	function refresh() {
+		dirty = false;
+		updateLegend();
+		updateControls();
+		updateLog();
+		updateMetricsCursor();
+	}
+
+	function showTooltip() {
+		if (hovered < 0) {
+			tooltip.hidden = true;
+			return;
+		}
+		var state = timeline.getState();
+		var unit = units[hovered];
+		tooltip.textContent = "";
+		function add(className, text) {
+			var element = document.createElement("div");
+			if (className) {
+				element.className = className;
+			}
+			element.textContent = text;
+			tooltip.appendChild(element);
+		}
+		add("tt-name", unit[U.NAME] + (state.alive[hovered] === 1 ? "" : " (dead)"));
+		add("", "Team: " + teams[unit[U.TEAM]] + " | Unit: " + unit[U.DECLARATION]);
+		add("", "Health: " + state.health[hovered] + "/" + unit[U.MAX_HEALTH]);
+		add("", "Attack " + unit[U.ATTACK] + " | Defense " + unit[U.DEFENSE] + " | Speed " + unit[U.SPEED]);
+		add("", "Position: (" + state.x[hovered] + ", " + state.y[hovered] + ")");
+		for (var i = 0; i < state.effects.length; i += 3) {
+			if (state.effects[i] === hovered) {
+				var turnsLeft = state.effects[i + 2];
+				add("", "Effect: " + strings[state.effects[i + 1]] + " (" + turnsLeft + " " + (turnsLeft === 1 ? "turn" : "turns") + " left)");
+			}
+		}
+		placeTooltip(mouseX, mouseY);
+	}
+
+	/* Shows the tooltip, already filled, next to the mouse. */
+	function placeTooltip(x, y) {
+		tooltip.hidden = false;
+		var left = Math.min(x + 14, window.innerWidth - tooltip.offsetWidth - 8);
+		var top = Math.min(y + 14, window.innerHeight - tooltip.offsetHeight - 8);
+		tooltip.style.left = Math.max(4, left) + "px";
+		tooltip.style.top = Math.max(4, top) + "px";
+	}
+
+	/* A tooltip of plain lines (the first one in bold), for the charts. */
+	function showLines(lines, x, y) {
+		tooltip.textContent = "";
+		for (var i = 0; i < lines.length; i++) {
+			var line = document.createElement("div");
+			if (i === 0) {
+				line.className = "tt-name";
+			}
+			line.textContent = lines[i];
+			tooltip.appendChild(line);
+		}
+		placeTooltip(x, y);
+	}
+
+	function hideLines() {
+		if (hovered < 0) {
+			tooltip.hidden = true;
+		}
+	}
+
+	/* The unit under the mouse, if any, by the distance to its center. */
+	function pickUnit(clientX, clientY) {
+		var box = canvas.getBoundingClientRect();
+		var x = clientX - box.left;
+		var y = clientY - box.top;
+		var reach = Math.max(radius, 6);
+		var best = -1;
+		var bestDistance = reach * reach;
+		var now = performance.now();
+		for (var i = 0; i < unitCount; i++) {
+			placeUnit(i, now);
+			var dx = screenX(displayX) - x;
+			var dy = screenY(displayY) - y;
+			var distance = dx * dx + dy * dy;
+			if (distance <= bestDistance) {
+				best = i;
+				bestDistance = distance;
+			}
+		}
+		return best;
+	}
+
+	/* ---- Moving through the battle ---- */
+
+	function clearAnimations() {
+		moves.clear();
+		flashes.clear();
+	}
+
+	/* Applies the next event and starts its little animation. */
+	function stepForward(animate) {
+		var event = timeline.stepForward();
+		if (event === null) {
+			return false;
+		}
+		dirty = true;
+		if (animate) {
+			var now = performance.now();
+			if (event[F.TYPE] === EVENT.MOVE && !reducedMotion && speed <= 20 && (event[F.X] !== event[F.FROM_X] || event[F.Y] !== event[F.FROM_Y])) {
+				moves.set(event[F.ACTOR], { fromX: event[F.FROM_X], fromY: event[F.FROM_Y], toX: event[F.X], toY: event[F.Y], start: now });
+			}
+			else if (event[F.TYPE] === EVENT.DAMAGE && !reducedMotion) {
+				flashes.set(event[F.TARGET], { color: HEALTH_COLORS.bad, start: now });
+			}
+			else if (event[F.TYPE] === EVENT.HEAL && !reducedMotion) {
+				flashes.set(event[F.TARGET], { color: HEALTH_COLORS.good, start: now });
+			}
+		}
+		return true;
+	}
+
+	function seek(position) {
+		clearAnimations();
+		timeline.seek(position);
+		dirty = true;
+		schedule();
+	}
+
+	function pause() {
+		playing = false;
+		dirty = true;
+	}
+
+	function play() {
+		if (eventCount === 0) {
+			return;
+		}
+		if (timeline.getPosition() >= eventCount) {
+			clearAnimations();
+			timeline.seek(0);
+		}
+		playing = true;
+		accumulated = 0;
+		lastFrame = 0;
+		dirty = true;
+		schedule();
+	}
+
+	function togglePlay() {
+		if (playing) {
+			pause();
+			schedule();
+		}
+		else {
+			play();
+		}
+	}
+
+	function stepEvent(direction) {
+		pause();
+		if (direction > 0) {
+			stepForward(true);
+		}
+		else {
+			clearAnimations();
+			timeline.seek(timeline.getPosition() - 1);
+		}
+		dirty = true;
+		schedule();
+	}
+
+	function stepRound(direction) {
+		pause();
+		var position = timeline.getPosition();
+		seek(direction > 0 ? timeline.nextRound(position) : timeline.previousRound(position));
+	}
+
+	function frame(now) {
+		frameRequest = 0;
+		if (playing) {
+			var elapsed = lastFrame ? Math.min((now - lastFrame) / 1000, 0.25) : 0;
+			lastFrame = now;
+			accumulated += elapsed * speed;
+			var steps = Math.floor(accumulated);
+			accumulated -= steps;
+			for (var k = 0; k < Math.min(steps, MAX_STEPS_PER_FRAME); k++) {
+				if (!stepForward(true)) {
+					playing = false;
+					break;
+				}
+			}
+			if (timeline.getPosition() >= eventCount) {
+				playing = false;
+			}
+		}
+		if (dirty) {
+			refresh();
+		}
+		draw(now);
+		if (hovered >= 0) {
+			showTooltip();
+		}
+		if (playing || hasAnimations()) {
+			schedule();
+		}
+		else {
+			lastFrame = 0;
+		}
+	}
+
+	function schedule() {
+		if (!frameRequest) {
+			frameRequest = window.requestAnimationFrame(frame);
+		}
+	}
+
+	/* ---- Events ---- */
+
+	/*
+	 * A button that was pressed with the mouse gives its focus back, so that the space
+	 * bar keeps playing and pausing. One that was pressed with the keyboard keeps it.
+	 */
+	function release(event) {
+		if (event.detail > 0 && event.currentTarget && event.currentTarget.blur) {
+			event.currentTarget.blur();
+		}
+	}
+
+	playButton.addEventListener("click", function (event) { togglePlay(); release(event); });
+	resetButton.addEventListener("click", function (event) { pause(); seek(0); release(event); });
+	previousEventButton.addEventListener("click", function (event) { stepEvent(-1); release(event); });
+	nextEventButton.addEventListener("click", function (event) { stepEvent(1); release(event); });
+	previousRoundButton.addEventListener("click", function (event) { stepRound(-1); release(event); });
+	nextRoundButton.addEventListener("click", function (event) { stepRound(1); release(event); });
+	tabLog.addEventListener("click", function (event) { selectTab(false, false); release(event); });
+	tabMetrics.addEventListener("click", function (event) { selectTab(true, false); release(event); });
+	byId("tabs").addEventListener("keydown", function (event) {
+		if (event.key === "ArrowLeft" || event.key === "ArrowRight" || event.key === "Home" || event.key === "End") {
+			event.preventDefault();
+			selectTab(event.key === "ArrowRight" || event.key === "End", true);
+		}
+	});
+	help.addEventListener("toggle", function () {
+		layout();
+		dirty = true;
+		schedule();
+	});
+	window.addEventListener("beforeprint", function () {
+		drawCharts();
+	});
+	window.addEventListener("afterprint", function () {
+		if (metricsShown) {
+			drawCharts();
+		}
+		layout();
+		dirty = true;
+		schedule();
+	});
+	speedInput.addEventListener("input", function () {
+		speed = Number(speedInput.value);
+		speedLabel.textContent = speed + " events/s";
+		if (speed > 20) {
+			moves.clear();
+		}
+	});
+	progressInput.addEventListener("input", function () {
+		seek(Number(progressInput.value));
+	});
+	logElement.addEventListener("click", function (event) {
+		var row = event.target && event.target.closest ? event.target.closest(".row") : null;
+		if (row) {
+			pause();
+			seek(Number(row.getAttribute("data-index")) + 1);
+		}
+	});
+	canvas.addEventListener("mousemove", function (event) {
+		mouseX = event.clientX;
+		mouseY = event.clientY;
+		var found = pickUnit(event.clientX, event.clientY);
+		if (found !== hovered) {
+			hovered = found;
+			if (hovered < 0) {
+				tooltip.hidden = true;
+			}
+		}
+		schedule();
+	});
+	canvas.addEventListener("mouseleave", function () {
+		hovered = -1;
+		tooltip.hidden = true;
+		schedule();
+	});
+	document.addEventListener("keydown", function (event) {
+		if (event.ctrlKey || event.metaKey || event.altKey) {
+			return;
+		}
+		var target = event.target;
+		if (event.key === " " || event.code === "Space") {
+			/* A button that has the focus is pressed by the space bar, as usual. */
+			if (target && target.tagName === "BUTTON") {
+				return;
+			}
+			event.preventDefault();
+			if (!event.repeat) {
+				togglePlay();
+			}
+		}
+		else if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+			/* On the tabs the arrows change the tab, and on the speed they change the speed. */
+			if (target && (target === speedInput || (target.getAttribute && target.getAttribute("role") === "tab"))) {
+				return;
+			}
+			event.preventDefault();
+			var direction = event.key === "ArrowRight" ? 1 : -1;
+			if (event.shiftKey) {
+				stepRound(direction);
+			}
+			else {
+				stepEvent(direction);
+			}
+		}
+	}, true);
+	document.addEventListener("keyup", function (event) {
+		if ((event.key === " " || event.code === "Space") && !(event.target && event.target.tagName === "BUTTON")) {
+			event.preventDefault();
+		}
+	}, true);
+	window.addEventListener("resize", function () {
+		layout();
+		dirty = true;
+		schedule();
+		if (metricsShown) {
+			drawCharts();
+		}
+	});
+
+	layout();
+	refresh();
+	schedule();
+}
+
+if (typeof document !== "undefined" && document.getElementById("battle-data")) {
+	try {
+		startUi(Replay.create(JSON.parse(document.getElementById("battle-data").textContent)));
+	}
+	catch (error) {
+		var failure = document.getElementById("banner");
+		failure.hidden = false;
+		failure.textContent = "The replay could not start: " + error.message;
+	}
+}
+if (typeof module !== "undefined" && module.exports) {
+	module.exports = Replay;
+}
+</script>
+</body>
+</html>

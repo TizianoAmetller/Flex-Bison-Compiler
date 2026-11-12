@@ -4,6 +4,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+/** How the result of the simulation is written to the standard output. */
+typedef enum {
+	FORMAT_TEXT,
+	FORMAT_HTML
+} OutputFormat;
+
 /**
  * The global state of the compiler. Should transport every data structure
  * needed across the different phases of a compilation.
@@ -36,6 +42,11 @@ typedef struct {
 	 * The most rounds that the battle lasts ("--max-rounds").
 	 */
 	int maxRounds;
+
+	/**
+	 * How the battle is written ("--format").
+	 */
+	OutputFormat format;
 
 	/**
 	 * What the semantic analysis learns about the program. It holds pointers

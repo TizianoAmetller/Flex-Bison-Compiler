@@ -15,7 +15,7 @@
 #define MAX_DICE 100000
 
 /** The most events that the trace of a battle can have. */
-#define MAX_EVENTS 2000000
+#define MAX_EVENTS 500000
 
 /** The rounds that a battle lasts at most, unless "--max-rounds" says otherwise. */
 #define DEFAULT_MAX_ROUNDS 1000
@@ -31,6 +31,13 @@
 
 /** How deep an expression can be nested (for example, a very long sum) when it is evaluated. */
 #define MAX_EXPRESSION_DEPTH 2000
+
+/**
+ * How many bodies and blocks can be running one inside another, adding up the
+ * ones of every "use" in the chain: the ability, effect or "on turn" body counts
+ * as one, and so does each block of an "if", an "else", a "for" and a "while".
+ */
+#define MAX_BLOCK_DEPTH 1000
 
 /** The radius of a "radius" expression is capped at 2^31, so its square fits in 64 bits. */
 #define MAX_RADIUS ((int64_t) 2147483648)

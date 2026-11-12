@@ -1,0 +1,145 @@
+/*
+ * 01-skirmish: six Heroes against six Raiders on a small field.
+ *
+ * The idea: a classic fight, small enough to read it whole. Knights and Orcs
+ * charge and hit whoever is next to them, Archers and Slingers shoot from a
+ * distance, the Cleric mends hurt friends, the Mage burns whole groups at once
+ * and the Shaman poisons.
+ *
+ * What it shows:
+ *  - An ability has no range in the language, so a unit that wants one asks for
+ *    the units around it ("radius") and acts on its nearest enemy only if that
+ *    enemy is among them. That is why the log has no wasted attempts.
+ *  - The Fireball hurts EVERY unit within 2 cells of its target, the friends of
+ *    the Mage included (but not the Mage itself): friendly fire is part of the
+ *    design, and a Knight that fights next to the target pays for it.
+ *  - Poison is an effect: it hurts its victim at the start of each of its turns
+ *    for as many turns as it lasts, and applying it again only renews them.
+ *  - A badly wounded Archer backs off instead of advancing (if / else and
+ *    "move away from"), and the Cleric can still mend it.
+ *
+ * Run it with a seed: the same seed always gives the same battle.
+ */
+arena (22, 10)
+
+unit Knight { health: 44, attack: 6, defense: 3, speed: 4, abilities: [Slash] }
+unit Archer { health: 22, attack: 7, defense: 1, speed: 3, abilities: [Shoot] }
+unit Cleric { health: 26, attack: 2, defense: 1, speed: 3, abilities: [Mend] }
+unit Mage { health: 20, attack: 5, defense: 0, speed: 2, abilities: [Fireball] }
+
+unit Orc { health: 40, attack: 7, defense: 2, speed: 4, abilities: [Slash] }
+unit Slinger { health: 22, attack: 7, defense: 1, speed: 3, abilities: [Shoot] }
+unit Shaman { health: 24, attack: 4, defense: 1, speed: 3, abilities: [Venom, Shoot] }
+
+ability Slash on target: enemy {
+	deal self.attack + 1d4 - target.defense to target
+}
+
+ability Shoot on target: enemy {
+	deal self.attack + 1d4 - target.defense to target
+}
+
+ability Mend on target: ally {
+	heal 7 + 1d4 to target
+}
+
+ability Fireball on target: enemy {
+	log "{self} hurls a fireball at {target}!"
+	for (victim in radius 2 of target) {
+		if (victim != self) {
+			deal 7 + 1d4 - victim.defense to victim
+		}
+	}
+}
+
+ability Venom on target: enemy {
+	log "{self} spits venom at {target}"
+	apply Poison to target for 4
+}
+
+effect Poison on victim {
+	deal 3 to victim
+}
+
+on turn Knight {
+	move toward nearest(enemy)
+	for (neighbor in radius 2 of nearest(enemy)) {
+		if (neighbor == self) {
+			use Slash on nearest(enemy)
+		}
+	}
+}
+
+on turn Orc {
+	move toward nearest(enemy)
+	for (neighbor in radius 2 of nearest(enemy)) {
+		if (neighbor == self) {
+			use Slash on nearest(enemy)
+		}
+	}
+}
+
+on turn Archer {
+	if (self.health < 8) {
+		move away from nearest(enemy)
+	} else {
+		move toward nearest(enemy)
+	}
+	for (neighbor in radius 8 of nearest(enemy)) {
+		if (neighbor == self) {
+			use Shoot on nearest(enemy)
+		}
+	}
+}
+
+on turn Slinger {
+	move toward nearest(enemy)
+	for (neighbor in radius 8 of nearest(enemy)) {
+		if (neighbor == self) {
+			use Shoot on nearest(enemy)
+		}
+	}
+}
+
+on turn Cleric {
+	for (friend in allies) {
+		if (friend.health < 20) {
+			use Mend on friend
+		}
+	}
+}
+
+on turn Mage {
+	for (neighbor in radius 9 of nearest(enemy)) {
+		if (neighbor == self) {
+			use Fireball on nearest(enemy)
+		}
+	}
+}
+
+on turn Shaman {
+	move toward nearest(enemy)
+	for (neighbor in radius 7 of nearest(enemy)) {
+		if (neighbor == self) {
+			if (1d3 == 1) {
+				use Venom on nearest(enemy)
+			} else {
+				use Shoot on nearest(enemy)
+			}
+		}
+	}
+}
+
+party Heroes = [
+	Knight at (7, 3), Knight at (7, 6),
+	Archer at (4, 2), Archer at (4, 7),
+	Cleric at (3, 5), Mage at (4, 4)
+]
+
+encounter Raiders = [
+	Orc at (15, 2), Orc at (15, 5), Orc at (15, 8),
+	Slinger at (18, 3), Slinger at (18, 7),
+	Shaman at (19, 5)
+]
+
+battle: [Heroes, Raiders]

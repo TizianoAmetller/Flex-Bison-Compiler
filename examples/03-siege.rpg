@@ -1,0 +1,133 @@
+/*
+ * 03-siege: forty defenders hold a line against sixty besiegers.
+ *
+ * The idea: a big battle, to see the metrics and the field with some volume. The
+ * Garrison waits behind a line of Pikemen and Knights with its Archers at the
+ * back, and the Besiegers (Raiders, Brutes and Slingers) cross the whole field
+ * to break it.
+ *
+ * What it shows:
+ *  - Groups: a member such as "Raider * 12 around (10, 8)" is twelve units
+ *    scattered around that point, and one team can have several groups of the
+ *    same unit (three columns of Raiders) next to single units placed with "at".
+ *  - Area attacks: the Archers' Volley hits every unit within 2 cells of its
+ *    target and leaves it bleeding. Friendly fire is part of the design, so
+ *    when the lines are mixed an Archer's volley hurts its own Pikemen too.
+ *  - Bleeding is an effect that hurts its victim every turn for a few turns.
+ *  - Every unit asks for the units around its nearest enemy ("radius") before it
+ *    acts, so melee units hit only what they reach and the ranged ones shoot only
+ *    what is in range.
+ *
+ * Run it with a seed: the same seed always gives the same battle.
+ */
+arena (60, 36)
+
+unit Pikeman { health: 38, attack: 6, defense: 4, speed: 3, abilities: [Slash] }
+unit Knight { health: 52, attack: 8, defense: 5, speed: 4, abilities: [Slash] }
+unit Captain { health: 60, attack: 9, defense: 5, speed: 4, abilities: [Slash] }
+unit Archer { health: 20, attack: 4, defense: 1, speed: 3, abilities: [Volley] }
+
+unit Raider { health: 40, attack: 7, defense: 2, speed: 4, abilities: [Slash] }
+unit Brute { health: 50, attack: 9, defense: 3, speed: 3, abilities: [Slash] }
+unit Slinger { health: 16, attack: 6, defense: 0, speed: 4, abilities: [Sling] }
+
+ability Slash on target: enemy {
+	deal self.attack + 1d4 - target.defense to target
+}
+
+ability Sling on target: enemy {
+	deal self.attack + 1d4 - target.defense to target
+}
+
+ability Volley on target: enemy {
+	for (victim in radius 2 of target) {
+		deal self.attack + 1d4 - victim.defense to victim
+		apply Bleeding to victim for 3
+	}
+}
+
+effect Bleeding on victim {
+	deal 2 to victim
+}
+
+on turn Pikeman {
+	move toward nearest(enemy)
+	for (neighbor in radius 2 of nearest(enemy)) {
+		if (neighbor == self) {
+			use Slash on nearest(enemy)
+		}
+	}
+}
+
+on turn Knight {
+	move toward nearest(enemy)
+	for (neighbor in radius 2 of nearest(enemy)) {
+		if (neighbor == self) {
+			use Slash on nearest(enemy)
+		}
+	}
+}
+
+on turn Captain {
+	move toward nearest(enemy)
+	for (neighbor in radius 2 of nearest(enemy)) {
+		if (neighbor == self) {
+			use Slash on nearest(enemy)
+		}
+	}
+}
+
+on turn Raider {
+	move toward nearest(enemy)
+	for (neighbor in radius 2 of nearest(enemy)) {
+		if (neighbor == self) {
+			use Slash on nearest(enemy)
+		}
+	}
+}
+
+on turn Brute {
+	move toward nearest(enemy)
+	for (neighbor in radius 2 of nearest(enemy)) {
+		if (neighbor == self) {
+			use Slash on nearest(enemy)
+		}
+	}
+}
+
+on turn Archer {
+	for (neighbor in radius 9 of nearest(enemy)) {
+		if (neighbor == self) {
+			use Volley on nearest(enemy)
+		}
+	}
+}
+
+on turn Slinger {
+	move toward nearest(enemy)
+	for (neighbor in radius 7 of nearest(enemy)) {
+		if (neighbor == self) {
+			use Sling on nearest(enemy)
+		}
+	}
+}
+
+party Garrison = [
+	Pikeman * 6 around (46, 8),
+	Pikeman * 6 around (46, 18),
+	Pikeman * 6 around (46, 28),
+	Knight * 6 around (50, 18),
+	Captain at (48, 13),
+	Captain at (48, 23),
+	Archer * 14 around (56, 18)
+]
+
+encounter Besiegers = [
+	Raider * 12 around (10, 8),
+	Raider * 12 around (10, 18),
+	Raider * 12 around (10, 28),
+	Brute * 10 around (5, 18),
+	Slinger * 14 around (3, 18)
+]
+
+battle: [Garrison, Besiegers]

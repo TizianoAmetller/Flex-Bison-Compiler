@@ -1,0 +1,135 @@
+unit Hero { health: 10, attack: 1, defense: 0, speed: 5, abilities: [Deep] }
+unit Goblin { health: 10, attack: 1, defense: 0, speed: 1 }
+
+ability Deep on target: enemy {
+	if (true) {
+		if (true) {
+			if (true) {
+				if (true) {
+					if (true) {
+						if (true) {
+							if (true) {
+								if (true) {
+									if (true) {
+										if (true) {
+											if (true) {
+												if (true) {
+													if (true) {
+														if (true) {
+															if (true) {
+																if (true) {
+																	if (true) {
+																		if (true) {
+																			if (true) {
+																				if (true) {
+																					if (true) {
+																						if (true) {
+																							if (true) {
+																								if (true) {
+																									if (true) {
+																										if (true) {
+																											if (true) {
+																												if (true) {
+																													if (true) {
+																														if (true) {
+																															if (true) {
+																																if (true) {
+																																	if (true) {
+																																		if (true) {
+																																			if (true) {
+																																				if (true) {
+																																					if (true) {
+																																						if (true) {
+																																							if (true) {
+																																								if (true) {
+																																									if (true) {
+																																										if (true) {
+																																											if (true) {
+																																												if (true) {
+																																													if (true) {
+																																														if (true) {
+																																															if (true) {
+																																																if (true) {
+																																																	if (true) {
+																																																		if (true) {
+																																																			if (true) {
+																																																				if (true) {
+																																																					if (true) {
+																																																						if (true) {
+																																																							if (true) {
+																																																								if (true) {
+																																																									if (true) {
+																																																										if (true) {
+																																																											if (true) {
+																																																												if (true) {
+																																																													use Deep on target
+																																																												}
+																																																											}
+																																																										}
+																																																									}
+																																																								}
+																																																							}
+																																																						}
+																																																					}
+																																																				}
+																																																			}
+																																																		}
+																																																	}
+																																																}
+																																															}
+																																														}
+																																													}
+																																												}
+																																											}
+																																										}
+																																									}
+																																								}
+																																							}
+																																						}
+																																					}
+																																				}
+																																			}
+																																		}
+																																	}
+																																}
+																															}
+																														}
+																													}
+																												}
+																											}
+																										}
+																									}
+																								}
+																							}
+																						}
+																					}
+																				}
+																			}
+																		}
+																	}
+																}
+															}
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+on turn Hero {
+	use Deep on nearest(enemy)
+}
+
+party Heroes = [Hero]
+encounter Goblins = [Goblin]
+
+battle: [Heroes, Goblins]

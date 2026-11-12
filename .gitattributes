@@ -58,6 +58,13 @@ Dockerfile text eol=lf
 # any CRLF would change what the compiler reads and the output it is compared to.
 src/test/** text eol=lf
 
+# The example programs (".rpg") are compiler input, as the fixtures are.
+examples/** text eol=lf
+
+# The page template and the CMake script that embeds it are read by the build.
+src/main/resources/** text eol=lf
+src/main/cmake/** text eol=lf
+
 # Binary formats.
 *.bmp binary
 *.dll binary

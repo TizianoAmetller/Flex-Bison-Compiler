@@ -1,0 +1,20 @@
+{
+"seed":"1",
+"maxRounds":1,
+"arena":null,
+"teams":["Heroes","Foes"],
+"units":[
+[0,"Hero",0,"Hero",0,0,10,10,1,0,5],
+[1,"Foe",1,"Foe",0,0,10,10,1,0,1]
+],
+"strings":[
+"bad byte: \ufffd and a cut sequence: \ufffd\ufffd end"
+],
+"events":[
+[0,1,0,-1,-1,0,0,0,0,0,0,-1],
+[10,1,0,0,-1,0,0,0,0,0,0,0],
+[12,1,0,-1,-1,2,0,0,0,0,0,-1]
+],
+"result":{"kind":"draw-limit","team":-1,"rounds":1},
+"error":null
+}

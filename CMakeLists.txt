@@ -35,6 +35,15 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 		DEPENDS ../src/main/c/frontend/syntactic-analysis/BisonParser.c ../src/main/c/frontend/syntactic-analysis/BisonParser.h ${CMAKE_SOURCE_DIR}/src/main/c/frontend/lexical-analysis/FlexPatterns.l
 	)
 
+	# Turns the HTML template of the replay into a C file with its bytes, so that it
+	# goes inside the binary. It is made again when the template (or the script) changes.
+	set(REPLAY_TEMPLATE_SOURCE ${CMAKE_CURRENT_BINARY_DIR}/ReplayTemplate.c)
+	add_custom_command(
+		OUTPUT ${REPLAY_TEMPLATE_SOURCE}
+		COMMAND ${CMAKE_COMMAND} -DINPUT=${CMAKE_SOURCE_DIR}/src/main/resources/replay-template.html -DOUTPUT=${REPLAY_TEMPLATE_SOURCE} -P ${CMAKE_SOURCE_DIR}/src/main/cmake/EmbedFile.cmake
+		DEPENDS ${CMAKE_SOURCE_DIR}/src/main/resources/replay-template.html ${CMAKE_SOURCE_DIR}/src/main/cmake/EmbedFile.cmake
+	)
+
 	# Defines the entry-point of the application, and the source-codes (*.c extension).
 	# The header files (*.h extension), are automatically included from the source-codes.
 	add_executable(Flex-Bison-Compiler
@@ -45,6 +54,7 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 		# the RPG simulator's own backend from scratch.
 		src/main/c/EntryPoint.c
 		src/main/c/backend/code-generation/Generator.c
+		src/main/c/backend/code-generation/HtmlGenerator.c
 		src/main/c/backend/semantic-analysis/LogTemplate.c
 		src/main/c/backend/semantic-analysis/SemanticAnalyzer.c
 		src/main/c/backend/semantic-analysis/SemanticModel.c
@@ -62,6 +72,7 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 		src/main/c/support/configuration/Environment.c
 		src/main/c/support/language/String.c
 		src/main/c/support/logging/Logger.c
+		${REPLAY_TEMPLATE_SOURCE}
 		# Add more *.c files if needed (otherwise, they won't be compiled).
 		# ...
 	)

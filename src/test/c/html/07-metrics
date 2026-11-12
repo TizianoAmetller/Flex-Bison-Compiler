@@ -1,0 +1,63 @@
+/*
+ * What the metrics of the replay have to attribute: a Hexer that poisons everyone
+ * (and so is credited with the damage of the poison, and with the kill when the
+ * poison finishes the Imp), a Priest whose Regrowth heals a Knight that is at full
+ * health at first (so some of the nominal healing does not count), and a Knight and
+ * an Ogre that hit each other with abilities.
+ */
+arena (12, 6)
+
+unit Hexer { health: 20, attack: 2, defense: 0, speed: 6, abilities: [Hex] }
+unit Priest { health: 20, attack: 1, defense: 0, speed: 5, abilities: [Bless] }
+unit Knight { health: 30, attack: 6, defense: 2, speed: 4, abilities: [Slash] }
+unit Ogre { health: 34, attack: 7, defense: 1, speed: 3, abilities: [Smash] }
+unit Imp { health: 5, attack: 1, defense: 0, speed: 2 }
+
+ability Hex on target: enemy {
+	apply Poison to target for 3
+}
+
+ability Bless on target: ally {
+	apply Regrowth to target for 3
+}
+
+ability Slash on target: enemy {
+	deal self.attack - target.defense to target
+}
+
+ability Smash on target: enemy {
+	deal self.attack - target.defense to target
+}
+
+effect Poison on victim {
+	deal 2 to victim
+}
+
+effect Regrowth on victim {
+	heal 4 to victim
+}
+
+on turn Hexer {
+	for (foe in enemies) {
+		use Hex on foe
+	}
+}
+
+on turn Priest {
+	use Bless on nearest(ally)
+}
+
+on turn Knight {
+	move toward nearest(enemy)
+	use Slash on nearest(enemy)
+}
+
+on turn Ogre {
+	move toward nearest(enemy)
+	use Smash on nearest(enemy)
+}
+
+party Wizards = [Hexer at (1, 2), Priest at (2, 3), Knight at (3, 3)]
+encounter Monsters = [Ogre at (6, 3), Imp at (10, 3)]
+
+battle: [Wizards, Monsters]

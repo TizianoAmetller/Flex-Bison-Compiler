@@ -4,7 +4,7 @@
 
 # Flex-Bison-Compiler
 
-A compiler for a custom DSL that simulates turn-based RPG combat (units, abilities, teams, a battlefield and battles), developed in C with Flex and Bison. The current repository state corresponds to **Stage 2 (Frontend)**: lexical analysis, syntactic analysis and AST construction.
+A compiler for a custom DSL that simulates turn-based RPG combat (units, abilities, teams, a battlefield and battles), developed in C with Flex and Bison. The project now covers the whole pipeline: lexical and syntactic analysis, semantic analysis, simulation of the battles, and generation of their text and of an HTML replay with metrics.
 
 * [Stage 2 Scope](#stage-2-scope)
 * [Language Overview](#language-overview)
@@ -30,11 +30,7 @@ This deliverable implements:
 
 The semantic analysis checks the structure of a program (for example: that the units a team lists were declared, that a battle has at least two teams, that positions fit inside the arena) and the bodies of its abilities, effects and `on turn` declarations. It is described in [Semantic analysis](#semantic-analysis).
 
-The battle of a valid program is simulated, and the text that tells it is written to the standard output (see [Simulation](#simulation)).
-
-It does **not** implement yet, and the next milestone adds:
-
-* any visual output of a battle (an HTML replay of it)
+The battle of a valid program is simulated, and the text that tells it is written to the standard output (see [Simulation](#simulation)), or a page that replays it in a browser, with metrics (see [HTML replay](#html-replay) and [Metrics](#metrics)). Three programs to try are in [Examples](#examples).
 
 ## Language Overview
 
@@ -173,7 +169,7 @@ The tests have two categories of their own under `src/test/c`, and both run the 
 
 ## Simulation
 
-When a program passes the semantic analysis and declares a `battle`, the compiler simulates it and writes what happens to the standard output, as text. The same program with the same seed always gives the same battle, on any platform. The compiler does not need anything else to play it: the simulation records a trace of structured events, and the text is made from the trace alone, so other outputs can be made from it too.
+When a program passes the semantic analysis and declares a `battle`, the compiler simulates it and writes what happens to the standard output, as text, or as a page that replays the battle in a browser with `--format html` (see [HTML replay](#html-replay)). The same program with the same seed always gives the same battle, on any platform. The compiler does not need anything else to play it: the simulation records a trace of structured events, and both outputs are made from the trace alone.
 
 ```
 Seed: 1
@@ -213,6 +209,7 @@ The consequences of an action are indented under it. A program that has no `batt
 | Rounds | In each, the units alive go in order of speed (the first one created first if they are tied). On its turn a unit first has its effects act, each one in the order it was applied, and then, if it is alive, runs its `on turn`. After every turn the battle ends if at most one team has units alive: that one wins, or it is a draw if none is left. If the rounds run out it is a draw too. |
 | `deal` and `heal` | The amount is evaluated once for each target, and a negative one is 0. A unit never has less than 0 health or more than its health at the start, and at 0 it dies. The events say the amount that the statement asked for. |
 | `apply` | The effect starts to act on each target that is alive. If it was already acting, its turns are set again, and they never add up. Each time the unit has a turn the effect acts, and its turns go down by one until it wears off. |
+| Dead targets | `deal`, `heal`, `apply` and `move` aimed at a single unit that is dead (for example, one that died earlier in the same body) do nothing, and nothing is told. A collection never has the dead, so it needs no rule. A `nearest` that finds no one is still skipped with `no unit found`, and only `use` tells that its target is dead (`target is dead`). |
 | `use` | It is skipped, and the skip is told, if the unit does not have the ability in its `abilities` (`not in its abilities`), if the target does not fit the types of the ability (`invalid target type`; `self`, `ally` and `enemy` are relative to the unit, and the tags are those of the target) or if it is dead (`target is dead`). Otherwise the body runs, with `self` as the unit and the parameter as the target. |
 | `move` | Toward a unit, the mover goes as many cells as its speed along each axis, without getting past the cell next to the target. Away from it, the mover goes as many cells as its speed in the other direction; when it is in the same cell as the target there is no other direction, and it goes toward +x. The result is kept inside the arena. |
 | `for` and `while` | A `for` goes over a copy of the collection and leaves out the units that die on the way. A `while` stops the simulation after 10000 iterations. |
@@ -226,10 +223,11 @@ The random numbers come from SplitMix64, written in the compiler (not from the C
 | :---------------- | :------ |
 | `--seed N`        | The seed of the random numbers, a number from 0 to 18446744073709551615. If there is none, the `SEED` environment variable is used (if it is not empty), and else a random one. The seed is always the first line of the output, so any battle can be repeated. |
 | `--max-rounds N`  | The most rounds that the battle lasts, from 1 to 1000000 (1000 by default). |
-| `--check`         | Parses and validates the program and does nothing else. |
+| `--format F`      | The output on the standard output: `text` (the default) or `html` (see [HTML replay](#html-replay)). |
+| `--check`         | Parses and validates the program and does nothing else (it generates no output, whatever the format). |
 | `--syntax-only`   | Stops after the syntactic analysis. |
 
-A value that is missing or not valid is a usage error (exit status 100). The exit status is `0` when the program is accepted and the battle ends (a draw is a way to end), `1` when the program is rejected, `100` when the command line is invalid and `101` when the simulation fails. A failed simulation reports `simulation error: ...` on the standard error and still writes what happened until then.
+A value that is missing or not valid is a usage error (exit status 100). The exit status is `0` when the program is accepted and the battle ends (a draw is a way to end), `1` when the program is rejected, `100` when the command line is invalid and `101` when the simulation fails. A failed simulation reports `simulation error: ...` on the standard error and still writes what happened until then, in the format that was asked for (in `html`, the page also has the error, in a red banner). The logs never go to the standard output.
 
 ### Limits
 
@@ -237,13 +235,109 @@ A value that is missing or not valid is a usage error (exit status 100). The exi
 | :---- | :---- | :------------------ |
 | Units in a battle | 10000 | The simulation fails |
 | Dice in one roll (`100000d6`) | 100000 | The simulation fails |
-| Events in the trace | 2000000 | The simulation fails |
+| Events in the trace | 500000 | The simulation fails |
 | Rounds | 1000 (`--max-rounds`) | The battle is a draw |
 | Iterations of a `while` | 10000 | The simulation fails |
 | `use` inside `use` | 32 | The simulation fails |
+| Statements nested (`if`, `while`, `for` and bodies inside one another, counted through every `use` in the chain) | 1000 | The simulation fails |
 | Nesting of an expression | 2000 | The simulation fails |
 
 A team that has no units when the battle starts (for example, a quantity that rolls 0) also fails the simulation.
+
+### HTML replay
+
+With `--format html` the compiler writes a single HTML page to the standard output that replays the battle:
+
+```bash
+src/main/bash/run.sh battle.rpg --format html --seed 1 > battle.html
+```
+
+Run under Docker Compose, the file lands in the folder of the repository, and it opens with a double click. The page has no other file and loads nothing from anywhere (no libraries, fonts or images from the network), so it works offline and can be sent as it is. The same program and seed always give the same page, byte for byte.
+
+**What it shows.** The arena, with a circle for each unit in the color of its team and the initial of its name, a bar of its health, and a cross when it is dead; if the battle has no arena, the box that holds the units. The mouse over a unit tells its name, team, health, attributes, position and effects (with their turns left). A mark on a unit tells that an effect is acting on it, and a short flash that it was hit or healed. Next to it, a panel with two tabs: **Log**, the battle in the same lines as the text output, with the current event highlighted (click a line to go there), and **Metrics** (see [Metrics](#metrics)). The legend under the field tells, for each team, its color and its units alive, as the playback goes. The page is titled `RPG battle replay - seed N`. A red banner at the top tells that the simulation was aborted, with its message, when it failed: the page shows the battle until that point.
+
+**Controls.**
+
+| Control | Key | Does |
+| :------ | :-- | :--- |
+| Play / Pause | space | Plays the events from the current one, at the speed of the slider (1 to 60 events per second, 10 by default) |
+| Event ‹ / › | left / right arrow | Goes one event back or forward |
+| « Round / Round » | shift + left / right arrow | Goes to the start of the previous or next round |
+| Reset | | Goes back to the start |
+| Progress | | A slider over all the events |
+| Log / Metrics | left / right arrow on a tab | Shows the log or the metrics |
+
+The keys are also listed in a fold under the field ("Keyboard shortcuts"). A button that has the focus (tab to it) is pressed by the space bar and enter as usual, and its focus is drawn with a thick outline. The text is dark enough to be read over its background (at least 4.5:1, and 3:1 for the colors of the teams, which are also told apart by the initial of each unit and by the legend), and when the system asks for reduced motion the units jump to their places and nothing flashes. The page can be printed: the controls and the log are left out, and the field and the metrics are not.
+
+**The data.** The page is a template (`src/main/resources/replay-template.html`, which can be edited as any HTML file) with a single marker, where the compiler writes the battle as JSON, in a block `<script id="battle-data" type="application/json">`. The CMake build turns the template into a C array (`src/main/cmake/EmbedFile.cmake`), so the binary needs no file at run time. The JSON is compact, because a battle can have hundreds of thousands of events: the units and the events are arrays of numbers, and every text is written once in a table of `strings` that the events point to. For the example of this README (the full data is `src/test/c/html/01-one-on-one.data`):
+
+```json
+{
+"seed":"1",
+"maxRounds":1000,
+"arena":null,
+"teams":["Heroes","Goblins"],
+"units":[
+[0,"Hero",0,"Hero",0,0,30,30,8,2,6],
+[1,"Goblin",1,"Goblin",0,0,12,12,5,1,4]
+],
+"strings":[
+"Slash"
+],
+"events":[
+[0,1,0,-1,-1,0,0,0,0,0,0,-1],
+[1,1,0,0,1,0,0,0,0,0,0,0],
+[2,1,1,0,1,7,5,0,0,0,0,-1],
+...
+],
+"result":{"kind":"winner","team":0,"rounds":2},
+"error":null
+}
+```
+
+A unit is `[id, name, team, declaration, x, y, health, maxHealth, attack, defense, speed]`, and an event is `[type, round, depth, actor, target, amount, health, fromX, fromY, x, y, string]`, where the type is the position of the event in the `EventType` of `Trace.h` (0 for the start of a round, to 12 for the end of the battle) and `string` is an index of `strings` or -1. The seed is a string because it can be up to 2^64 - 1, more than a number of JavaScript can hold. The page rebuilds the state of the battle at any event by applying the values of the events to the units (it does not run anything), starting from a checkpoint (a copy of the state that it keeps the first time it goes past each stretch of events, with a memory bounded for any size of battle), so moving back and forth is immediate. Only the 200 lines of the log that are around the current event are in the page at any time, so a battle of any size is as light as a small one. The comment at the top of `src/main/c/backend/code-generation/HtmlGenerator.c` has the full format.
+
+**Safety.** Everything that the program writes (names, tags, the messages of `log`) is data, and it can't run: the generator writes `<`, `>`, `&`, the line and paragraph separators (U+2028 and U+2029) and the control characters as `\uXXXX` and every byte that is not valid UTF-8 as U+FFFD, so no text can close the `<script>`, and the page puts all of it on the screen as text, never as HTML. The page also carries a content security policy that allows no network access, no frames and no scripts or styles other than its own (`default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:`).
+
+**Size.** The page takes about 80 KB plus about 40 bytes for each event: a battle of 500 against 500 is about 0.5 MB, and the limit of events (500000) keeps any page under 20 MB. The player was checked with 10000 units and 125000 events: it loads in under 0.2 seconds, computes its metrics in about 40 milliseconds and keeps 60 frames per second.
+
+### Metrics
+
+The second tab of the panel of the page has the metrics of the battle. The page computes them when it loads, in a single pass over the events (`Replay.computeMetrics`, in the template), and for a battle that failed (status 101) it does it with what was reached. They are made only of the values that the events carry, with no rule of the game recomputed:
+
+* **Damage and healing are the effective ones**: the health of the unit before the event minus its health after it, so a hit of 7 on a unit with 3 health counts for 3, and a heal of 5 on a unit with 2 missing counts for 2. The amount that the event says is not used.
+* **Whoever acts is credited.** What happens in a turn or inside an ability is credited to the unit that acts. What happens inside the tick of an effect (the events deeper than it, up to the next event that is not) is credited to the unit that applied the effect, or renewed it for the last time, and it is counted apart as _effect damage_ or _effect healing_.
+* **A kill** is a death credited like the damage that caused it, so the poison that finishes a unit is a kill of the unit that poisoned it. A unit that kills an ally, or itself, gets the kill: the friendly fire of the programs counts as any other damage.
+* **Effects applied** counts each time an effect is applied or renewed.
+
+The tab shows:
+
+| Part | What it is |
+| :--- | :--------- |
+| Cards | The result, the rounds, the units alive out of the units at the start of each team, and the total damage and healing (with how much is from effects). They are about the whole battle. |
+| Units alive, Total health | A line for each team, with the value at the end of each round (the round 0 is the start). The dashed line is how far the playback is (it moves inside the round, as the events go), the mouse tells the values of a round and a click goes to the start of that round. The total health is the sum of the health of the units alive. |
+| Damage dealt by team | Bars of the damage of each team, with its abilities (solid) and its effects (striped) one over the other. |
+| Teams | For each team: units at the start, alive and dead, damage, effect damage, healing, effect healing, kills and effects applied. |
+| Units | For each unit: its team, whether it is alive or the round in which it died, damage, effect damage, damage taken, healing, effect healing and kills. It is sorted by damage, and a click on a header sorts by that column (and again, the other way). It shows the first 50 and a button shows up to 1000 (with a note if there are more). A click on a row goes to the first event of the unit. |
+
+### Examples
+
+The folder `examples` has three programs that serve as a demo, as the material of a report and as tests. Each one explains its idea in a comment at its start, has an `on turn` for every unit, and ends with a winner (never a draw) in less than 80 rounds, for each seed from 1 to 20. Between them they use every feature of the language: arena, positions, groups with `around`, tags and targets by tag, abilities with a parameter, three kinds of effect (damage over time, healing over time and one that makes its victim flee with `move away from`), `radius`, `nearest`, `for`, `if` / `else`, `while`, dice, `log` with placeholders, `heal`, `move toward` and `move away from` and a battle of three teams.
+
+| File | Teams | What it shows |
+| :--- | :---- | :------------ |
+| `examples/01-skirmish.rpg` | 2 teams, 6 against 6 | A small battle, readable in full: a Cleric that mends, a Mage whose area attack also burns its friends, a Shaman whose Poison hurts every turn, and Archers that back off when they are hurt. |
+| `examples/02-three-armies.rpg` | 3 teams, 5 + 5 + 4 | All against all: the Paladins smite the undead (an ability that only targets a tag), the Wraith makes its victims flee, the Priest heals over time and the Warlord keeps striking while the target is nearly dead (`while`). |
+| `examples/03-siege.rpg` | 2 teams, 40 against 60 | A big battle in a big arena, with groups scattered `around` points. The volleys of the Archers hit an area and leave their victims bleeding. Good to see the metrics with some volume. |
+
+To run one, as text and as a page (the seed makes the battle repeatable):
+
+```bash
+src/main/bash/run.sh examples/01-skirmish.rpg --seed 1
+src/main/bash/run.sh examples/01-skirmish.rpg --seed 1 --format html > skirmish.html
+```
+
+The abilities have no range in the language, so the examples ask for the units around the nearest enemy (`for (neighbor in radius 2 of nearest(enemy)) { if (neighbor == self) ... }`): a unit acts only if it is among them, which keeps the log free of attempts that do not happen. The language has no way to ask for the tag of a unit in an expression either, so the Paladins of `02-three-armies` tell the undead apart by their speed.
 
 ### Known limitations
 
@@ -252,13 +346,16 @@ A team that has no units when the battle starts (for example, a quantity that ro
 * The cost grows with the square of the number of units (`nearest`, `allies` and `enemies` go over all of them): a battle of 5000 against 5000 takes about 11 seconds with the sanitizers on.
 * There is no timeout on the clock: a battle inside all the limits can still take long.
 * `deal` and `heal` tell the amount that was evaluated, not the effective one: `heals 5 (health 10/10)` can be a heal of 3.
+* Numbers above 2^53 are shown with lost precision in the HTML replay and in its metrics, because JavaScript has no exact integers beyond that (the engine works with 64 bits).
 
 ### Tests
 
-Two more categories under `src/test/c` run the whole compiler with `--seed 1`, and the options of the `NN-name.args` file next to a program, if it has one (for example, `--max-rounds 5`):
+Three more categories under `src/test/c` run the whole compiler with `--seed 1`, and the options of the `NN-name.args` file next to a program, if it has one (for example, `--max-rounds 5`), and a fourth one runs the examples:
 
 * `simulation`: the battle must end (exit status `0`) with no error, and write exactly what the `NN-name.stdout` file has.
 * `simulation-reject`: the simulation must fail (exit status `101`) with the messages of the `NN-name.stderr` file, which are exhaustive, as in `semantic-reject`.
+* `html`: the program is run with `--format html` (see [HTML replay](#html-replay)). The page must be complete (it starts with `<!DOCTYPE html>`, ends with `</html>` and has the content security policy), must load nothing from outside (no `http://`, no `https://`, no `<script src` and no `<link`), and the JSON block of its data must be exactly what the `NN-name.data` file has. The exit status is `0`, or `101` if the program has an `NN-name.stderr` file, which lists the error of the simulation (the page must have the battle until it failed and the error in its data).
+* `examples` (the programs of the folder `examples`, see [Examples](#examples)): each one is run with `--seed 1`, as text and as a page. Its text must end with a winner (exit status `0`, no error and a `Winner:` line), for each team the alive plus the dead of the last lines must be the units of the header, and its page must be complete, as in `html`.
 
 ## Requirements
 
@@ -304,7 +401,7 @@ Compiles a program:
 src/main/bash/run.sh <program> [options]
 ```
 
-where `<program>` is the path to the file that represents its entry-point. The options after it are forwarded to the compiler: `--syntax-only`, `--check`, `--seed N` and `--max-rounds N` (see [Simulation](#simulation)). A valid program with a `battle` is simulated, and the text of the battle is written to the standard output. The exit status is `0` when the program is accepted and its battle ends, `1` when it is rejected, `100` when the command line is invalid (for example, an unknown option) and `101` when the simulation fails, and a syntax error reports its line. Every log goes to the standard error, so the standard output is reserved for the output of the compiled program. To watch the AST being built, run with `LOGGING_LEVEL=DEBUGGING`: the semantic actions log themselves in the order they build it.
+where `<program>` is the path to the file that represents its entry-point. The options after it are forwarded to the compiler: `--syntax-only`, `--check`, `--seed N`, `--max-rounds N` and `--format text|html` (see [Simulation](#simulation)). A valid program with a `battle` is simulated, and the battle is written to the standard output, as text or, with `--format html`, as a page that replays it (`run.sh battle.rpg --format html > battle.html`, see [HTML replay](#html-replay)). The exit status is `0` when the program is accepted and its battle ends, `1` when it is rejected, `100` when the command line is invalid (for example, an unknown option) and `101` when the simulation fails, and a syntax error reports its line. Every log goes to the standard error, so the standard output is reserved for the output of the compiled program. To watch the AST being built, run with `LOGGING_LEVEL=DEBUGGING`: the semantic actions log themselves in the order they build it.
 
 ### Test
 
@@ -325,16 +422,18 @@ docker compose down
 
 ## Tests
 
-The tests under `src/test/c` have six categories:
+The tests have eight categories, seven of them under `src/test/c` and the last one over the folder `examples`:
 
 * `src/test/c/accept`: valid programs, which must be accepted by the syntactic analysis.
 * `src/test/c/reject`: invalid programs, which must be rejected by it.
 * `src/test/c/semantic-accept` and `src/test/c/semantic-reject`: the same for the semantic analysis (see [Semantic analysis](#semantic-analysis)).
 * `src/test/c/simulation` and `src/test/c/simulation-reject`: battles that must end with a given text, and battles that must fail with a given error (see [Simulation](#simulation)).
+* `src/test/c/html`: programs whose HTML replay must be well formed, self-contained and have a given data block (see [HTML replay](#html-replay)).
+* `examples`: the example programs, which must end with a winner as text and as a page (see [Examples](#examples)).
 
 Each test is as small as possible and covers a single feature, and a few of the rejections pin down restrictions that are intentional (for example, `around` only goes with a quantity, and `at` only without one). A few larger programs show the features working together.
 
-`test.sh` runs the `accept` and `reject` programs with `--syntax-only`, the semantic ones with `--check`, and the simulation ones with `--seed 1`. It requires the exact exit status: `0` for the `accept` categories and `simulation`, `1` for the `reject` ones and `101` for `simulation-reject`. It runs the compiler at the `WARNING` logging level, so that the standard error is the same everywhere. The build links AddressSanitizer and UndefinedBehaviorSanitizer, and a test also fails when its standard error holds a sanitizer report, so a crash can't pass as a rejection.
+`test.sh` runs the `accept` and `reject` programs with `--syntax-only`, the semantic ones with `--check`, the simulation ones with `--seed 1`, the `html` ones with `--seed 1 --format html`, and the examples with `--seed 1` in both formats. It requires the exact exit status: `0` for the `accept` categories, `simulation` and `html` (except the `html` programs that have a `.stderr` file, which are `101`), `1` for the `reject` ones and `101` for `simulation-reject`. It runs the compiler at the `WARNING` logging level, so that the standard error is the same everywhere. The build links AddressSanitizer and UndefinedBehaviorSanitizer, and a test also fails when its standard error holds a sanitizer report, so a crash can't pass as a rejection.
 
 ## Documentation
 

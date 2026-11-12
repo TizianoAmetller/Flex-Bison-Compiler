@@ -1,0 +1,13 @@
+Seed: 1
+Arena: unbounded
+Team P: 1 unit
+Team Q: 1 unit
+
+Round 1
+B takes 2000 damage (health 0/50)
+B dies
+
+Battle over after 1 round.
+Winner: P
+Team P: 1 alive, 0 dead
+Team Q: 0 alive, 1 dead

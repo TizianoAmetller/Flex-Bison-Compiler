@@ -1,0 +1,14 @@
+{
+"seed":"1",
+"maxRounds":1000,
+"arena":null,
+"teams":[],
+"units":[
+],
+"strings":[
+],
+"events":[
+],
+"result":null,
+"error":"line 11: team 'Blue' has no units at the start"
+}

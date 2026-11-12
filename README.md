@@ -6,6 +6,7 @@
 
 A compiler for a custom DSL that simulates turn-based RPG combat (units, abilities, teams, a battlefield and battles), developed in C with Flex and Bison. The project now covers the whole pipeline: lexical and syntactic analysis, semantic analysis, simulation of the battles, and generation of their text and of an HTML replay with metrics.
 
+* [Quick start](#quick-start)
 * [Stage 2 Scope](#stage-2-scope)
 * [Language Overview](#language-overview)
 * [Semantic analysis](#semantic-analysis)
@@ -18,6 +19,18 @@ A compiler for a custom DSL that simulates turn-based RPG combat (units, abiliti
 * [CI/CD](#cicd)
 * [Notes](#notes)
 * [Recommended Extensions](#recommended-extensions)
+
+## Quick start
+
+```bash
+docker compose run --rm compiler  # open the container (the next lines run inside it)
+src/main/bash/build.sh  # build the compiler
+LOGGING_LEVEL=ERROR src/main/bash/run.sh examples/01-skirmish.rpg --seed 1  # a battle, as text
+LOGGING_LEVEL=ERROR src/main/bash/run.sh examples/01-skirmish.rpg --seed 1 --format html > battle.html  # the replay: open battle.html with a double click
+src/main/bash/test.sh  # the tests
+```
+
+`LOGGING_LEVEL=ERROR` is there because under Docker Compose the default level is `ALL`, which writes thousands of debug lines to the standard error (the standard output stays clean either way).
 
 ## Stage 2 Scope
 
@@ -194,7 +207,7 @@ Team Heroes: 1 alive, 0 dead
 Team Goblins: 0 alive, 1 dead
 ```
 
-The consequences of an action are indented under it. A program that has no `battle` is only validated.
+The consequences of an action are indented under it. A program that has no `battle` is only validated. The output above is what `LOGGING_LEVEL=ERROR src/main/bash/run.sh src/test/c/html/01-one-on-one --seed 1` writes.
 
 ### The model
 
@@ -211,7 +224,7 @@ The consequences of an action are indented under it. A program that has no `batt
 | `apply` | The effect starts to act on each target that is alive. If it was already acting, its turns are set again, and they never add up. Each time the unit has a turn the effect acts, and its turns go down by one until it wears off. |
 | Dead targets | `deal`, `heal`, `apply` and `move` aimed at a single unit that is dead (for example, one that died earlier in the same body) do nothing, and nothing is told. A collection never has the dead, so it needs no rule. A `nearest` that finds no one is still skipped with `no unit found`, and only `use` tells that its target is dead (`target is dead`). |
 | `use` | It is skipped, and the skip is told, if the unit does not have the ability in its `abilities` (`not in its abilities`), if the target does not fit the types of the ability (`invalid target type`; `self`, `ally` and `enemy` are relative to the unit, and the tags are those of the target) or if it is dead (`target is dead`). Otherwise the body runs, with `self` as the unit and the parameter as the target. |
-| `move` | Toward a unit, the mover goes as many cells as its speed along each axis, without getting past the cell next to the target. Away from it, the mover goes as many cells as its speed in the other direction; when it is in the same cell as the target there is no other direction, and it goes toward +x. The result is kept inside the arena. |
+| `move` | Toward a unit, the mover goes as many cells as its speed along each axis, without getting past the cell next to the target. Away from it, the mover goes as many cells as its speed in the other direction; when it is in the same cell as the target there is no other direction, and it goes toward +x. The result is kept inside the arena. A move that leaves the mover where it was (it is next to the target already, or it is against the edge of the arena) does nothing, and nothing is told. |
 | `for` and `while` | A `for` goes over a copy of the collection and leaves out the units that die on the way. A `while` stops the simulation after 10000 iterations. |
 | `log` | The unit is written by its name, an `int` in decimal, a `bool` as `true` or `false` and a string as it is. |
 
@@ -249,12 +262,12 @@ A team that has no units when the battle starts (for example, a quantity that ro
 With `--format html` the compiler writes a single HTML page to the standard output that replays the battle:
 
 ```bash
-src/main/bash/run.sh battle.rpg --format html --seed 1 > battle.html
+LOGGING_LEVEL=ERROR src/main/bash/run.sh battle.rpg --format html --seed 1 > battle.html
 ```
 
 Run under Docker Compose, the file lands in the folder of the repository, and it opens with a double click. The page has no other file and loads nothing from anywhere (no libraries, fonts or images from the network), so it works offline and can be sent as it is. The same program and seed always give the same page, byte for byte.
 
-**What it shows.** The arena, with a circle for each unit in the color of its team and the initial of its name, a bar of its health, and a cross when it is dead; if the battle has no arena, the box that holds the units. The mouse over a unit tells its name, team, health, attributes, position and effects (with their turns left). A mark on a unit tells that an effect is acting on it, and a short flash that it was hit or healed. Next to it, a panel with two tabs: **Log**, the battle in the same lines as the text output, with the current event highlighted (click a line to go there), and **Metrics** (see [Metrics](#metrics)). The legend under the field tells, for each team, its color and its units alive, as the playback goes. The page is titled `RPG battle replay - seed N`. A red banner at the top tells that the simulation was aborted, with its message, when it failed: the page shows the battle until that point.
+**What it shows.** The arena, with a circle for each unit in the color of its team and the initial of its name, a bar of its health, and a cross when it is dead; if the battle has no arena, the box that holds the units. The mouse over a unit tells its name, team, health, attributes, position and effects (with their turns left). A mark on a unit tells that an effect is acting on it, and a short flash that it was hit or healed. Next to it, a panel with two tabs: **Log**, the battle in the same lines as the text output, with the current event highlighted (click a line to go there), and **Metrics** (see [Metrics](#metrics)). The legend under the field tells, for each team, its color and its units alive, as the playback goes. The page is titled `RPG battle replay - seed N`. A red banner at the top tells that the simulation was aborted, with its message, when it failed: the page shows the battle until that point (and if it failed before the first event, for example because a team had no units at the start, there is nothing to play, and the play, step and progress controls are disabled).
 
 **Controls.**
 
@@ -310,7 +323,7 @@ The second tab of the panel of the page has the metrics of the battle. The page 
 * **A kill** is a death credited like the damage that caused it, so the poison that finishes a unit is a kill of the unit that poisoned it. A unit that kills an ally, or itself, gets the kill: the friendly fire of the programs counts as any other damage.
 * **Effects applied** counts each time an effect is applied or renewed.
 
-The tab shows:
+The panel has the same size in both tabs, so the battlefield does not move when the tab changes: the metrics scroll inside the panel, and the tables scroll sideways when they are wider than it. The tab shows:
 
 | Part | What it is |
 | :--- | :--------- |
@@ -333,8 +346,8 @@ The folder `examples` has three programs that serve as a demo, as the material o
 To run one, as text and as a page (the seed makes the battle repeatable):
 
 ```bash
-src/main/bash/run.sh examples/01-skirmish.rpg --seed 1
-src/main/bash/run.sh examples/01-skirmish.rpg --seed 1 --format html > skirmish.html
+LOGGING_LEVEL=ERROR src/main/bash/run.sh examples/01-skirmish.rpg --seed 1
+LOGGING_LEVEL=ERROR src/main/bash/run.sh examples/01-skirmish.rpg --seed 1 --format html > skirmish.html
 ```
 
 The abilities have no range in the language, so the examples ask for the units around the nearest enemy (`for (neighbor in radius 2 of nearest(enemy)) { if (neighbor == self) ... }`): a unit acts only if it is among them, which keeps the log free of attempts that do not happen. The language has no way to ask for the tag of a unit in an expression either, so the Paladins of `02-three-armies` tell the undead apart by their speed.
@@ -405,7 +418,7 @@ where `<program>` is the path to the file that represents its entry-point. The o
 
 ### Test
 
-Executes every available test under `src/test/c` folder:
+Executes every available test (the ones under `src/test/c` and the examples of `examples`):
 
 ```bash
 src/main/bash/test.sh

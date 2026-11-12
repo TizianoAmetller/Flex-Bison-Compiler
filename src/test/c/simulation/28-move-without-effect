@@ -1,0 +1,25 @@
+/*
+ * A move that would not change the position is not an event, and it is not a
+ * skip either: the statement does nothing. The Walker is in the corner of the
+ * arena, next to the Dummy, so "move toward" has nowhere to go (it is next to
+ * the Dummy already) and "move away from" would leave the arena (the position
+ * is clamped back to the corner). Each move is followed by a "log", to show
+ * that the next statement runs.
+ */
+arena (5, 5)
+
+unit Walker at (0, 0) { health: 10, attack: 1, defense: 0, speed: 3 }
+unit Dummy at (1, 1) { health: 1, attack: 0, defense: 0, speed: 1 }
+
+on turn Walker {
+	move toward nearest(enemy)
+	log "after moving toward the Dummy"
+	move away from nearest(enemy)
+	log "after moving away from the Dummy"
+	deal 1 to nearest(enemy)
+}
+
+party Walkers = [Walker]
+encounter Dummies = [Dummy]
+
+battle: [Walkers, Dummies]

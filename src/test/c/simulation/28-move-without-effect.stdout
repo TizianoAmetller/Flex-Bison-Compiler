@@ -1,0 +1,15 @@
+Seed: 1
+Arena: 5x5
+Team Walkers: 1 unit
+Team Dummies: 1 unit
+
+Round 1
+> after moving toward the Dummy
+> after moving away from the Dummy
+Dummy takes 1 damage (health 0/1)
+Dummy dies
+
+Battle over after 1 round.
+Winner: Walkers
+Team Walkers: 1 alive, 0 dead
+Team Dummies: 0 alive, 1 dead

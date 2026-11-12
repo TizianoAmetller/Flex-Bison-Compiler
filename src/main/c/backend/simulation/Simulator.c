@@ -431,7 +431,9 @@ static bool _moveAlongAxis(Runtime * runtime, const int64_t position, const int6
  * (one step at a time, but in a closed formula), without going past the cell
  * next to the target. "move away from <unit>" goes as many cells as its speed
  * the other way, and from the same cell as the target it goes toward +x. The
- * unit stays inside the arena.
+ * unit stays inside the arena. A move that leaves the unit where it was (it is
+ * next to the target already, or it is against the edge of the arena) does
+ * nothing: it is not an event, and it is not a skip either.
  */
 static void _executeMove(Simulation * simulation, const Statement * statement, const int perspective, const RuntimeScope * scope) {
 	const MoveStatement * move = statement->moveStatement;
@@ -475,17 +477,19 @@ static void _executeMove(Simulation * simulation, const Statement * statement, c
 			}
 			if (moved) {
 				clampToArena(world, &x, &y);
-				unit->x = x;
-				unit->y = y;
-				TraceEvent * event = _emit(simulation, EVENT_MOVE);
-				if (event != NULL) {
-					event->actor = perspective;
-					event->target = (int) target.number;
-					event->name = (move->direction == TOWARD_MOVE) ? "toward" : "away from";
-					event->fromX = fromX;
-					event->fromY = fromY;
-					event->x = x;
-					event->y = y;
+				if (x != fromX || y != fromY) {
+					unit->x = x;
+					unit->y = y;
+					TraceEvent * event = _emit(simulation, EVENT_MOVE);
+					if (event != NULL) {
+						event->actor = perspective;
+						event->target = (int) target.number;
+						event->name = (move->direction == TOWARD_MOVE) ? "toward" : "away from";
+						event->fromX = fromX;
+						event->fromY = fromY;
+						event->x = x;
+						event->y = y;
+					}
 				}
 			}
 		}

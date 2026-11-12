@@ -72,7 +72,8 @@ typedef struct {
  *   EFFECT_APPLIED, _REFRESHED the effect "name" is on target for "amount" turns
  *   EFFECT_TICK                the effect "name" acts on target; "amount" is its turns left after the tick
  *   EFFECT_END                 the effect "name" wears off from target
- *   MOVE                       actor goes from (fromX, fromY) to (x, y), "toward" or "away from" (name) target
+ *   MOVE                       actor goes from (fromX, fromY) to (x, y), "toward" or "away from" (name) target;
+ *                              it always changes the position (a move that would leave it as it is is no event)
  *   LOG                        actor says "text"
  *   SKIP                       actor skips a statement, because of "reason"; with a "name" it was a "use" on target
  *   BATTLE_END                 the result is in "amount" (see BattleResult), the winner is "team"

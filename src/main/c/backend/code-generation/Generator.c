@@ -68,12 +68,7 @@ static void _printEvent(const Trace * trace, const TraceEvent * event, const siz
 			fprintf(out, "%s wears off from %s\n", event->name, target);
 			break;
 		case EVENT_MOVE:
-			if (event->x == event->fromX && event->y == event->fromY) {
-				fprintf(out, "%s stays at (%lld, %lld)\n", actor, (long long) event->x, (long long) event->y);
-			}
-			else {
-				fprintf(out, "%s moves %s %s: (%lld, %lld) -> (%lld, %lld)\n", actor, event->name, target, (long long) event->fromX, (long long) event->fromY, (long long) event->x, (long long) event->y);
-			}
+			fprintf(out, "%s moves %s %s: (%lld, %lld) -> (%lld, %lld)\n", actor, event->name, target, (long long) event->fromX, (long long) event->fromY, (long long) event->x, (long long) event->y);
 			break;
 		case EVENT_LOG:
 			fprintf(out, "> %s\n", event->text);

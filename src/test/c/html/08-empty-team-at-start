@@ -1,0 +1,11 @@
+/*
+ * A team that has no units when the battle starts: the simulation fails before
+ * the first round, so the page has a battle with no events to play.
+ */
+unit Archer { health: 10, attack: 1, defense: 0, speed: 5 }
+unit Goblin { health: 10, attack: 1, defense: 0, speed: 1 }
+
+party Blue = [Archer * 1d1 - 1]
+encounter Red = [Goblin]
+
+battle: [Blue, Red]

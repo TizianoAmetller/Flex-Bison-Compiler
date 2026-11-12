@@ -72,7 +72,6 @@ canvas {
 	border: 1px solid rgba(0, 0, 0, 0.4);
 	border-radius: 50%;
 }
-main.wide { grid-template-columns: minmax(0, 1fr) minmax(420px, 46%); }
 #side {
 	display: flex;
 	flex-direction: column;
@@ -177,6 +176,8 @@ button {
 button:hover:not(:disabled) { background: #e8f0fa; border-color: var(--accent); }
 button:disabled { color: #8c8c8c; background: #f1f0eb; cursor: default; }
 button.primary { min-width: 5.5em; color: #ffffff; background: var(--accent); border-color: var(--accent); font-weight: 600; }
+/* The main button looks disabled too (this rule is more specific than the one above). */
+button.primary:disabled { color: #8c8c8c; background: #f1f0eb; border-color: #aaa597; }
 button.primary:hover:not(:disabled) { background: #084a8c; }
 button:focus-visible, input:focus-visible, summary:focus-visible, #log:focus-visible, #metrics-view:focus-visible {
 	outline: 3px solid var(--accent);
@@ -197,7 +198,7 @@ button:focus-visible, input:focus-visible, summary:focus-visible, #log:focus-vis
 }
 #tooltip .tt-name { font-weight: 700; font-size: 13.5px; }
 @media (max-width: 899px) {
-	main, main.wide { grid-template-columns: minmax(0, 1fr); }
+	main { grid-template-columns: minmax(0, 1fr); }
 	#side { height: 420px; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -207,7 +208,7 @@ button:focus-visible, input:focus-visible, summary:focus-visible, #log:focus-vis
 	* { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 	body { min-height: 0; background: #ffffff; }
 	#controls, #tabs, #log-view, #tooltip, .help { display: none !important; }
-	main, main.wide { display: block; padding: 8px 0; }
+	main { display: block; padding: 8px 0; }
 	#side { display: block; height: auto; min-height: 0; margin-top: 12px; border: 0; }
 	#metrics-view { display: block !important; overflow: visible; padding: 0; }
 	#field-canvas, canvas.chart { width: 100% !important; height: auto !important; max-width: 100%; }
@@ -388,9 +389,6 @@ var Replay = (function () {
 			case EVENT.EFFECT_END:
 				return [indent + stringOf(event) + " wears off from " + target];
 			case EVENT.MOVE:
-				if (event[F.X] === event[F.FROM_X] && event[F.Y] === event[F.FROM_Y]) {
-					return [indent + actor + " stays at (" + event[F.X] + ", " + event[F.Y] + ")"];
-				}
 				return [indent + actor + " moves " + stringOf(event) + " " + target + ": (" + event[F.FROM_X] + ", " + event[F.FROM_Y] + ") -> (" + event[F.X] + ", " + event[F.Y] + ")"];
 			case EVENT.LOG:
 				return [indent + "> " + stringOf(event)];
@@ -832,7 +830,6 @@ function startUi(replay) {
 	var header = document.querySelector("header");
 	var controls = byId("controls");
 	var help = byId("help");
-	var mainElement = document.querySelector("main");
 
 	function teamColor(team) {
 		return PALETTE[team % PALETTE.length];
@@ -1836,11 +1833,10 @@ function startUi(replay) {
 		tabMetrics.setAttribute("aria-selected", String(showMetrics));
 		tabLog.tabIndex = showMetrics ? -1 : 0;
 		tabMetrics.tabIndex = showMetrics ? 0 : -1;
-		mainElement.classList.toggle("wide", showMetrics);
 		if (focus) {
 			(showMetrics ? tabMetrics : tabLog).focus();
 		}
-		layout();
+		/* The panel keeps its size, so the battlefield does not move: only what is inside the panel changes. */
 		dirty = true;
 		schedule();
 		if (showMetrics) {

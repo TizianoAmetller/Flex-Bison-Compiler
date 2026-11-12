@@ -360,6 +360,7 @@ The abilities have no range in the language, so the examples ask for the units a
 * There is no timeout on the clock: a battle inside all the limits can still take long.
 * `deal` and `heal` tell the amount that was evaluated, not the effective one: `heals 5 (health 10/10)` can be a heal of 3.
 * Numbers above 2^53 are shown with lost precision in the HTML replay and in its metrics, because JavaScript has no exact integers beyond that (the engine works with 64 bits).
+* A byte order mark (BOM, the bytes `EF BB BF`) at the start of the file is not accepted: it is an unrecognized character, like any other that is not ASCII outside a string or a comment.
 
 ### Tests
 

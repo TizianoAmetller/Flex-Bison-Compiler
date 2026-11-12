@@ -25,7 +25,8 @@
 /* PRIVATE FUNCTIONS */
 
 static bool _parseUnsigned(const char * text, uint64_t * value);
-static bool _parseArguments(const int length, const char ** arguments, CompilerState * compilerState, const Logger * logger);
+static bool _parseArguments(const int length, const char ** arguments, CompilerState * compilerState, const Logger * logger, bool * helpRequested);
+static void _printHelp(void);
 static CompilationStatus _simulate(CompilerState * compilerState, const Logger * logger);
 
 /**
@@ -50,16 +51,21 @@ static bool _parseUnsigned(const char * text, uint64_t * value) {
  * Parses the command-line arguments (the first one is the program itself) into
  * the compiler state: "--syntax-only", "--check", "--seed N", "--max-rounds N"
  * and "--format text|html". If there is no seed, it is the SEED environment variable (when it is not
- * empty) or else a random one. Returns false, after reporting it, when there is
- * an unknown option or an invalid value.
+ * empty) or else a random one. "--help" (or "-h") stops the reading at once and
+ * sets "helpRequested". Returns false, after reporting it, when there is an
+ * unknown option or an invalid value.
  */
-static bool _parseArguments(const int length, const char ** arguments, CompilerState * compilerState, const Logger * logger) {
+static bool _parseArguments(const int length, const char ** arguments, CompilerState * compilerState, const Logger * logger, bool * helpRequested) {
 	static const char * usage = "Usage: Flex-Bison-Compiler [--syntax-only] [--check] [--seed N] [--max-rounds N] [--format text|html] < <program>";
 	bool hasSeed = false;
 	compilerState->maxRounds = DEFAULT_MAX_ROUNDS;
 	for (int k = 1; k < length; ++k) {
 		uint64_t value = 0;
-		if (strcmp(arguments[k], "--syntax-only") == 0) {
+		if (strcmp(arguments[k], "--help") == 0 || strcmp(arguments[k], "-h") == 0) {
+			*helpRequested = true;
+			return true;
+		}
+		else if (strcmp(arguments[k], "--syntax-only") == 0) {
 			compilerState->syntaxOnly = true;
 		}
 		else if (strcmp(arguments[k], "--check") == 0) {
@@ -119,6 +125,25 @@ static bool _parseArguments(const int length, const char ** arguments, CompilerS
 }
 
 /**
+ * Writes the usage and the options of the compiler to the standard error, as the
+ * logs do: the standard output is only for the output of the compiled program.
+ */
+static void _printHelp(void) {
+	fprintf(stderr,
+		"Usage: Flex-Bison-Compiler [--syntax-only] [--check] [--seed N] [--max-rounds N] [--format text|html] < <program>\n"
+		"\n"
+		"Options:\n"
+		"  --seed N          The seed of the random numbers, from 0 to 18446744073709551615 (if there is none,\n"
+		"                    the SEED environment variable, and else a random one).\n"
+		"  --max-rounds N    The most rounds that the battle lasts, from 1 to %d (%d by default).\n"
+		"  --format F        The output on the standard output: text (the default) or html.\n"
+		"  --check           Parses and validates the program and does nothing else.\n"
+		"  --syntax-only     Stops after the syntactic analysis.\n"
+		"  --help, -h        Shows this help, and exits with status 0.\n",
+		MAX_ROUNDS_OPTION, DEFAULT_MAX_ROUNDS);
+}
+
+/**
  * Simulates the battle and writes it to the standard output, as text or as an
  * HTML page, even if the simulation fails halfway: what happened until then is
  * shown. If everything went well but the output could not be written (for
@@ -175,10 +200,17 @@ int main(const int length, const char ** arguments) {
 		.semanticModel = NULL,
 		.trace = NULL
 	};
-	if (!_parseArguments(length, arguments, &compilerState, logger)) {
+	bool helpRequested = false;
+	if (!_parseArguments(length, arguments, &compilerState, logger, &helpRequested)) {
 		destroyLogger(logger);
 		destroyLexicalAnalyzer(lexicalAnalyzer);
 		return INVALID_USAGE;
+	}
+	if (helpRequested) {
+		_printHelp();
+		destroyLogger(logger);
+		destroyLexicalAnalyzer(lexicalAnalyzer);
+		return SUCCEEDED;
 	}
 	ModuleDestructor moduleDestructors[] = {
 		initializeAbstractSyntaxTreeModule(),

@@ -120,6 +120,30 @@ check_syntax() {
 	done
 }
 
+# Runs the whole compiler over every program in a folder, with the seed 1. A
+# program must be accepted, and its battle must end (status 0) with no error in
+# the standard error and no sanitizer report.
+check_accept() {
+	local folder="$1"
+	local file
+	for file in "$folder"/*; do
+		[ -f "$file" ] || continue
+		is_companion "$file" && continue
+		run_compiler "$file" --seed 1
+		if has_sanitizer_report; then
+			fail "$(basename "$file")" "there is a sanitizer report"
+		elif [ "$RESULT" == "1" ]; then
+			fail "$(basename "$file")" "it rejects"
+		elif [ "$RESULT" != "0" ]; then
+			fail "$(basename "$file")" "it fails unexpectedly"
+		elif grep --quiet --fixed-strings '[ERROR]' "$PLAIN_FILE"; then
+			fail "$(basename "$file")" "it logs an error"
+		else
+			pass "$(basename "$file")"
+		fi
+	done
+}
+
 # Runs the compiler up to the end of the semantic analysis (--check) over every
 # program in a folder. A program must be accepted, with no error in its standard
 # error. If it has an "NN-name.stderr" file next to it, each non-empty line of
@@ -420,7 +444,12 @@ check_examples() {
 
 echo "Compiler should accept..."
 echo ""
-check_syntax "src/test/c/accept" 0 1 "rejects"
+check_accept "src/test/c/accept"
+echo ""
+
+echo "Syntax analysis should accept..."
+echo ""
+check_syntax "src/test/c/syntax-accept" 0 1 "rejects"
 echo ""
 
 echo "Compiler should reject..."

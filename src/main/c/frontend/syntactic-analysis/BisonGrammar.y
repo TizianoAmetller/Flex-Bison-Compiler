@@ -297,8 +297,9 @@ unitDeclaration: UNIT ID tagClause positionClause OPEN_BRACE attributeList CLOSE
  * unit it belongs to (e.g. "unit Skeleton: undead, beast { ... }"). It goes
  * in the header, before the position, mirroring how an ability lists the
  * kinds of target it accepts ("ability Smite on target: undead"). Tags are
- * plain identifiers, not keywords, matched against those abilities in Stage
- * III.
+ * plain identifiers, not keywords: the semantic analysis checks that the tags
+ * an ability names exist, and the simulation matches them against the target
+ * when the ability is used (see Simulator.c).
  */
 tagClause: COLON idList											{ $$ = TagClauseSemanticAction($idList); }
 	| %empty													{ $$ = NULL; }
@@ -321,10 +322,9 @@ attributeListWithComma: attribute COMMA attributeListWithComma	{ $$ = AddAttribu
 /**
  * An attribute's name is a plain identifier (not a fixed keyword): this way
  * the very same word (e.g. "health", "attack") is also a valid member name
- * in a member-access expression (self.attack, target.defense). Checking
- * that the declared attribute names are exactly {health, attack, defense,
- * speed}, each appearing once, is a semantic-analysis concern (Stage III),
- * not a syntactic one.
+ * in a member-access expression (self.attack, target.defense). The semantic
+ * analysis, not the grammar, checks that the declared attribute names are
+ * exactly {health, attack, defense, speed}, each appearing once.
  */
 attribute: ID COLON expression									{ $$ = AttributeSemanticAction(@$.first_line, $1, $3); }
 	;
@@ -343,9 +343,10 @@ idList: ID COMMA idList										{ $$ = AddIdentifierSemanticAction(@ID.first_li
  * "targetParameter" is a plain identifier bound within the ability body (by
  * convention, "target"), not a fixed keyword: an ability's second name works
  * like a function parameter. The optional "targetTypeClause" restricts the
- * relational type(s) of a valid target (e.g. "on target: ally", "on target:
- * enemy, self"); "ally"/"enemy"/"self" are plain identifiers here too (not
- * keywords), resolved against actual team membership in Stage III.
+ * valid targets by relation or by tag (e.g. "on target: ally", "on target:
+ * enemy, self", "on target: undead"); "ally"/"enemy"/"self" are plain
+ * identifiers here too (not keywords), and the simulation resolves them
+ * against the teams when the ability is used (see Simulator.c).
  */
 abilityDeclaration: ABILITY ID[name] ON ID[targetParameter] targetTypeClause OPEN_BRACE statementList CLOSE_BRACE
 																{ $$ = AbilitySemanticAction($name, $targetParameter, $targetTypeClause, $statementList); }
@@ -386,10 +387,9 @@ memberList: member COMMA memberList							{ $$ = AddMemberSemanticAction($1, $3)
  * or a declared unit repeated a number of times (e.g. "Archer * 20", or
  * "Archer * 2d6" for a randomized army size -- the quantity is a general
  * "expression", not just a literal, matching "Member.quantity"'s type in
- * the AST). Both forms reference the very same "unit" declaration; whether
- * a repeated unit is instantiated as N independent copies (sharing that
- * declaration's attributes/abilities) is a semantic-analysis concern
- * (Stage III).
+ * the AST). Both forms reference the very same "unit" declaration, and the
+ * simulation creates each instance of a repeated unit as an independent copy
+ * of it, with its own rolled attributes (see World.c).
  *
  * Each form also takes its own optional position, which is what tells the
  * two apart in the grammar: a single member is placed exactly ("Hero at (0,
@@ -468,9 +468,9 @@ expression: expression[left] ADD expression[right]			{ $$ = BinaryExpressionSema
 	/**
 	 * "radius <r> of <center>" denotes the collection of units within
 	 * distance "r" of "center" (e.g., used as "for (victim in radius 5 of
-	 * target) { ... }"). Computing that collection from the declared (x, y)
-	 * positions is a semantic-analysis concern (Stage III); Stage II only
-	 * represents it in the AST.
+	 * target) { ... }"). The simulation computes that collection from the
+	 * positions the units have when it is evaluated (see Evaluator.c); the
+	 * parser only builds its node.
 	 *
 	 * "%prec RADIUS" (see that dedicated precedence level, above -- between
 	 * MUL/DIV and DOT) makes this production reduce as soon as "of

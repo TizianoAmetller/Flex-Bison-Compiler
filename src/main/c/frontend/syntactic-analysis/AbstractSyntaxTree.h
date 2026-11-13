@@ -209,7 +209,7 @@ struct Expression {
 		DiceValue dice;
 		int integerValue;
 		bool booleanValue;
-		/** Shared by STRING (raw literal, interpolation resolved in Stage III) and IDENTIFIER. */
+		/** Shared by STRING (the literal, without its quotes) and IDENTIFIER. */
 		char * text;
 	};
 	ExpressionType type;
@@ -248,7 +248,10 @@ struct ApplyStatement {
 	Expression * duration;
 };
 
-/** log <message> (a string literal; "{identifier}" is interpolated in Stage III). */
+/**
+ * log <message>: a string literal, whose "{name}" and "{name.attribute}"
+ * placeholders the simulation fills in (see LogTemplate.h).
+ */
 struct LogStatement {
 	char * message;
 };
@@ -256,9 +259,9 @@ struct LogStatement {
 /**
  * move toward <target> | move away from <target>
  *
- * The unit running the statement moves relative to "target" (a unit or a
- * position-bearing expression); how far it gets is up to its speed, which is
- * a Stage III concern.
+ * The unit running the statement moves relative to "target", which must be a
+ * unit: at most as many cells as its speed along each axis, toward the target
+ * or away from it, and always inside the arena (see Simulator.c).
  */
 struct MoveStatement {
 	MoveDirection direction;
@@ -315,7 +318,8 @@ struct StatementList {
  * The tags are the kinds of unit this one belongs to (e.g. "unit Skeleton:
  * undead, beast { ... }"), which an ability can target by name ("on target:
  * undead"), next to the relational types ally/enemy/self. Like those, they
- * are plain identifiers, not keywords; resolving them is a Stage III concern.
+ * are plain identifiers, not keywords; the simulation matches them against
+ * the target types of an ability when it is used (see Simulator.c).
  */
 struct UnitDeclaration {
 	char * name;
@@ -331,11 +335,12 @@ struct UnitDeclaration {
 /**
  * ability <name> on <targetParameter> [: <targetType>, ...] { <body> }
  *
- * "targetTypes" is the optional relational-type restriction on the target
- * (e.g. "on target: ally", "on target: enemy, self"). The type names
- * themselves (ally/enemy/self) are plain identifiers, not keywords -
- * resolving them against actual team membership is a semantic-analysis
- * concern (Stage III). NULL when the clause is omitted (any target valid).
+ * "targetTypes" is the optional restriction on the target, by relation or by
+ * tag (e.g. "on target: ally", "on target: enemy, self", "on target: undead").
+ * The type names are plain identifiers, not keywords: the semantic analysis
+ * checks that each one is ally, enemy, self or a declared tag, and the
+ * simulation matches them against the target when the ability is used. NULL
+ * when the clause is omitted (any target is valid).
  */
 struct AbilityDeclaration {
 	char * name;
@@ -350,9 +355,10 @@ struct AbilityDeclaration {
  * What the effect named in "apply <name> to <target> for <turns>" does to the
  * unit carrying it (e.g. "effect Poison on victim { deal 2 to victim }"). The
  * body is the same statement language as an ability's, and "targetParameter"
- * is a plain identifier bound to the affected unit inside it. When and how
- * often the body runs while the effect lasts is a Stage III concern, and so
- * is checking that every applied effect has a declaration.
+ * is a plain identifier bound to the affected unit inside it. The simulation
+ * runs the body at the start of each turn of that unit while the effect
+ * lasts, and the semantic analysis checks that every applied effect has a
+ * declaration.
  */
 struct EffectDeclaration {
 	char * name;
@@ -370,9 +376,8 @@ struct TurnDeclaration {
  * A single party/encounter member: a reference to a declared "unit" name,
  * optionally repeated "quantity" times (e.g. "Archer * 20"). Both a plain
  * "Hero" and a repeated "Archer * 20" reference the very same kind of "unit"
- * declaration; whether a repeated unit is instantiated as N independent
- * copies (sharing that declaration's attributes/abilities) is a
- * semantic-analysis concern (Stage III).
+ * declaration, and the simulation creates each instance of a repeated unit
+ * as an independent copy of it, with its own rolled attributes (see World.c).
  *
  * The grammar only allows "at (x, y)" on a single member ("Hero at (0, 0)")
  * and "around (x, y)" on a repeated one ("Archer * 20 around (10, 5)"), so
@@ -406,8 +411,8 @@ struct TeamDeclaration {
  * arena (<width>, <height>)
  *
  * The size of the battlefield, which is what gives every "at"/"around"
- * position its bounds. Checking that there is at most one, and that every
- * position fits inside it, is a semantic-analysis concern (Stage III).
+ * position its bounds. The semantic analysis checks that there is at most
+ * one, and that every position fits inside it.
  */
 struct ArenaDeclaration {
 	Expression * width;
@@ -417,9 +422,9 @@ struct ArenaDeclaration {
 /**
  * battle: [<teamName>, ...]
  *
- * A list of 2+ participating team names (any number, not just 2). Checking
- * that there are at least 2, that they're all declared, and that no unit
- * appears in more than one, is a semantic-analysis concern (Stage III).
+ * A list of 2+ participating team names (any number, not just 2). The
+ * semantic analysis checks that there are at least 2, that they are all
+ * declared and different, and that no unit appears in more than one.
  */
 struct BattleDeclaration {
 	IdentifierList * teams;

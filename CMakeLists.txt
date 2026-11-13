@@ -47,11 +47,11 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 	# Defines the entry-point of the application, and the source-codes (*.c extension).
 	# The header files (*.h extension), are automatically included from the source-codes.
 	add_executable(Flex-Bison-Compiler
-		# Stage II is frontend-only (lexical + syntactic analysis) per the
-		# QRF's feedback; the original template's arithmetic-domain backend
-		# (Generator.c/Calculator.c) has been removed, since it referenced
-		# AST types that no longer exist in this grammar. Stage III will add
-		# the RPG simulator's own backend from scratch.
+		# The frontend (Flex, Bison and the AST) reads the program, and the
+		# backend checks it (semantic-analysis), runs the battle (simulation)
+		# and writes it as text or as an HTML replay (code-generation). The
+		# arithmetic backend of the template (Calculator.c) was removed along
+		# with the AST it worked on.
 		src/main/c/EntryPoint.c
 		src/main/c/backend/code-generation/Generator.c
 		src/main/c/backend/code-generation/HtmlGenerator.c

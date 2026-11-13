@@ -11,7 +11,7 @@
  * placeholder and every "}" closes one.
  *
  * The semantic analysis uses it to validate the placeholders, and the
- * simulation will use it to print the messages.
+ * simulation uses it to print the messages.
  */
 
 typedef enum {

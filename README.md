@@ -63,23 +63,33 @@ unit Hero at (0, 10) {
 }
 
 unit Archer {
-	health: 10, attack: 3, defense: 1, speed: 5
+	health: 10, attack: 2, defense: 1, speed: 3, abilities: [Shoot]
 }
 
 unit Goblin {
-	health: 12, attack: 5, defense: 1, speed: 4
+	health: 20, attack: 6, defense: 2, speed: 4, abilities: [Stab]
 }
 
 ability Slash on target: enemy {
+	log "{self} slashes {target}"
 	deal self.attack - target.defense to target
-	log "Hero slashes {target} for {self.attack}"
 	apply Poison to target for 3
 }
 
 ability Fireball on target: enemy {
 	for (victim in radius 5 of target) {
-		deal 2d6 to victim
+		if (victim != self) {
+			deal 2d6 to victim
+		}
 	}
+}
+
+ability Shoot on target: enemy {
+	deal self.attack + 1d4 - target.defense to target
+}
+
+ability Stab on target: enemy {
+	deal self.attack + 1d4 - target.defense to target
 }
 
 effect Poison on victim {
@@ -91,8 +101,21 @@ on turn Hero {
 		move away from nearest(enemy)
 	} else {
 		move toward nearest(enemy)
-		use Slash on nearest(enemy)
+		if (1d3 == 3) {
+			use Fireball on nearest(enemy)
+		} else {
+			use Slash on nearest(enemy)
+		}
 	}
+}
+
+on turn Archer {
+	use Shoot on nearest(enemy)
+}
+
+on turn Goblin {
+	move toward nearest(enemy)
+	use Stab on nearest(enemy)
 }
 
 party Heroes = [Hero, Archer * 20 around (5, 10)]

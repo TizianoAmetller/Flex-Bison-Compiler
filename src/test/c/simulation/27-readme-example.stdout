@@ -6,52 +6,143 @@ Team Goblins: 7 units
 Round 1
 Hero moves toward Goblin#1: (0, 10) -> (10, 10)
 Hero uses Slash on Goblin#1
-  Goblin#1 takes 14 damage (health 0/12)
+  > Hero slashes Goblin#1
+  Goblin#1 takes 13 damage (health 7/20)
+  Goblin#1 is affected by Poison for 3 turns
+Poison acts on Goblin#1
+  Goblin#1 takes 2 damage (health 5/20)
+Goblin#1 moves toward Hero: (32, 10) -> (28, 10)
+Goblin#1 uses Stab on Hero
+  Hero takes 2 damage (health 98/100)
+Goblin#2 moves toward Archer#10: (37, 8) -> (33, 7)
+Goblin#2 uses Stab on Archer#10
+  Archer#10 takes 8 damage (health 2/10)
+Goblin#3 moves toward Archer#10: (37, 8) -> (33, 7)
+Goblin#3 uses Stab on Archer#10
+  Archer#10 takes 8 damage (health 0/10)
+  Archer#10 dies
+Goblin#4 moves toward Hero: (38, 10) -> (34, 10)
+Goblin#4 uses Stab on Hero
+  Hero takes 2 damage (health 96/100)
+Goblin#5 moves toward Hero: (32, 9) -> (28, 10)
+Goblin#5 uses Stab on Hero
+  Hero takes 5 damage (health 91/100)
+Goblin#6 moves toward Archer#8: (38, 13) -> (34, 15)
+Goblin#6 uses Stab on Archer#8
+  Archer#8 takes 6 damage (health 4/10)
+Goblin#7 moves toward Hero: (35, 12) -> (31, 10)
+Goblin#7 uses Stab on Hero
+  Hero takes 5 damage (health 86/100)
+Archer#1 uses Shoot on Goblin#1
+  Goblin#1 takes 3 damage (health 2/20)
+Archer#2 uses Shoot on Goblin#1
+  Goblin#1 takes 1 damage (health 1/20)
+Archer#3 uses Shoot on Goblin#1
+  Goblin#1 takes 4 damage (health 0/20)
   Goblin#1 dies
-  > Hero slashes Goblin#1 for 15
+Archer#4 uses Shoot on Goblin#5
+  Goblin#5 takes 4 damage (health 16/20)
+Archer#5 uses Shoot on Goblin#5
+  Goblin#5 takes 2 damage (health 14/20)
+Archer#6 uses Shoot on Goblin#5
+  Goblin#5 takes 4 damage (health 10/20)
+Archer#7 uses Shoot on Goblin#5
+  Goblin#5 takes 2 damage (health 8/20)
+Archer#8 uses Shoot on Goblin#5
+  Goblin#5 takes 4 damage (health 4/20)
+Archer#9 uses Shoot on Goblin#5
+  Goblin#5 takes 2 damage (health 2/20)
+Archer#11 uses Shoot on Goblin#5
+  Goblin#5 takes 4 damage (health 0/20)
+  Goblin#5 dies
+Archer#12 uses Shoot on Goblin#7
+  Goblin#7 takes 3 damage (health 17/20)
+Archer#13 uses Shoot on Goblin#7
+  Goblin#7 takes 4 damage (health 13/20)
+Archer#14 uses Shoot on Goblin#7
+  Goblin#7 takes 4 damage (health 9/20)
+Archer#15 uses Shoot on Goblin#7
+  Goblin#7 takes 3 damage (health 6/20)
+Archer#16 uses Shoot on Goblin#7
+  Goblin#7 takes 2 damage (health 4/20)
+Archer#17 uses Shoot on Goblin#7
+  Goblin#7 takes 2 damage (health 2/20)
+Archer#18 uses Shoot on Goblin#7
+  Goblin#7 takes 2 damage (health 0/20)
+  Goblin#7 dies
+Archer#19 uses Shoot on Goblin#2
+  Goblin#2 takes 2 damage (health 18/20)
+Archer#20 uses Shoot on Goblin#2
+  Goblin#2 takes 4 damage (health 14/20)
 
 Round 2
-Hero moves toward Goblin#5: (10, 10) -> (20, 9)
-Hero uses Slash on Goblin#5
-  Goblin#5 takes 14 damage (health 0/12)
-  Goblin#5 dies
-  > Hero slashes Goblin#5 for 15
+Hero moves toward Goblin#2: (10, 10) -> (20, 7)
+Hero uses Fireball on Goblin#2
+  Goblin#2 takes 12 damage (health 2/20)
+  Goblin#3 takes 7 damage (health 13/20)
+  Goblin#4 takes 2 damage (health 18/20)
+Goblin#2 moves toward Hero: (33, 7) -> (29, 7)
+Goblin#2 uses Stab on Hero
+  Hero takes 2 damage (health 84/100)
+Goblin#3 moves toward Hero: (33, 7) -> (29, 7)
+Goblin#3 uses Stab on Hero
+  Hero takes 4 damage (health 80/100)
+Goblin#4 moves toward Hero: (34, 10) -> (30, 7)
+Goblin#4 uses Stab on Hero
+  Hero takes 4 damage (health 76/100)
+Goblin#6 moves toward Hero: (34, 15) -> (30, 11)
+Goblin#6 uses Stab on Hero
+  Hero takes 5 damage (health 71/100)
+Archer#1 uses Shoot on Goblin#2
+  Goblin#2 takes 3 damage (health 0/20)
+  Goblin#2 dies
+Archer#2 uses Shoot on Goblin#3
+  Goblin#3 takes 1 damage (health 12/20)
+Archer#3 uses Shoot on Goblin#3
+  Goblin#3 takes 2 damage (health 10/20)
+Archer#4 uses Shoot on Goblin#3
+  Goblin#3 takes 1 damage (health 9/20)
+Archer#5 uses Shoot on Goblin#3
+  Goblin#3 takes 3 damage (health 6/20)
+Archer#6 uses Shoot on Goblin#3
+  Goblin#3 takes 2 damage (health 4/20)
+Archer#7 uses Shoot on Goblin#3
+  Goblin#3 takes 2 damage (health 2/20)
+Archer#8 uses Shoot on Goblin#6
+  Goblin#6 takes 4 damage (health 16/20)
+Archer#9 uses Shoot on Goblin#3
+  Goblin#3 takes 4 damage (health 0/20)
+  Goblin#3 dies
+Archer#11 uses Shoot on Goblin#6
+  Goblin#6 takes 3 damage (health 13/20)
+Archer#12 uses Shoot on Goblin#4
+  Goblin#4 takes 2 damage (health 16/20)
+Archer#13 uses Shoot on Goblin#6
+  Goblin#6 takes 4 damage (health 9/20)
+Archer#14 uses Shoot on Goblin#6
+  Goblin#6 takes 4 damage (health 5/20)
+Archer#15 uses Shoot on Goblin#6
+  Goblin#6 takes 3 damage (health 2/20)
+Archer#16 uses Shoot on Goblin#6
+  Goblin#6 takes 1 damage (health 1/20)
+Archer#17 uses Shoot on Goblin#6
+  Goblin#6 takes 4 damage (health 0/20)
+  Goblin#6 dies
+Archer#18 uses Shoot on Goblin#4
+  Goblin#4 takes 3 damage (health 13/20)
+Archer#19 uses Shoot on Goblin#4
+  Goblin#4 takes 3 damage (health 10/20)
+Archer#20 uses Shoot on Goblin#4
+  Goblin#4 takes 3 damage (health 7/20)
 
 Round 3
-Hero moves toward Goblin#7: (20, 9) -> (30, 12)
-Hero uses Slash on Goblin#7
-  Goblin#7 takes 14 damage (health 0/12)
-  Goblin#7 dies
-  > Hero slashes Goblin#7 for 15
-
-Round 4
-Hero moves toward Goblin#2: (30, 12) -> (36, 8)
-Hero uses Slash on Goblin#2
-  Goblin#2 takes 14 damage (health 0/12)
-  Goblin#2 dies
-  > Hero slashes Goblin#2 for 15
-
-Round 5
-Hero uses Slash on Goblin#3
-  Goblin#3 takes 14 damage (health 0/12)
-  Goblin#3 dies
-  > Hero slashes Goblin#3 for 15
-
-Round 6
-Hero moves toward Goblin#4: (36, 8) -> (37, 9)
+Hero moves toward Goblin#4: (20, 7) -> (29, 7)
 Hero uses Slash on Goblin#4
-  Goblin#4 takes 14 damage (health 0/12)
+  > Hero slashes Goblin#4
+  Goblin#4 takes 13 damage (health 0/20)
   Goblin#4 dies
-  > Hero slashes Goblin#4 for 15
 
-Round 7
-Hero moves toward Goblin#6: (37, 9) -> (38, 12)
-Hero uses Slash on Goblin#6
-  Goblin#6 takes 14 damage (health 0/12)
-  Goblin#6 dies
-  > Hero slashes Goblin#6 for 15
-
-Battle over after 7 rounds.
+Battle over after 3 rounds.
 Winner: Heroes
-Team Heroes: 21 alive, 0 dead
+Team Heroes: 20 alive, 1 dead
 Team Goblins: 0 alive, 7 dead

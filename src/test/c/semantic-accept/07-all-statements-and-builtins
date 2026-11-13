@@ -18,7 +18,7 @@ ability Fireball on target: enemy {
 }
 
 ability Rally on target: ally {
-	for (friend in all(allies)) {
+	for (friend in allies) {
 		heal 1 to friend
 	}
 	heal 2 to allies

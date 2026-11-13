@@ -66,7 +66,7 @@ typedef struct {
 } UnitOwner;
 
 /** Names that the language uses itself, so no declaration can take them. */
-static const char * const RESERVED_NAMES[] = { "self", "allies", "enemies", "ally", "enemy", "nearest", "all" };
+static const char * const RESERVED_NAMES[] = { "self", "allies", "enemies", "ally", "enemy", "nearest" };
 
 /** The attributes every unit declares exactly once. */
 static const char * const UNIT_ATTRIBUTES[] = { "health", "attack", "defense", "speed" };
@@ -159,7 +159,7 @@ static ValueType _resolveName(const int line, const char * name, const Scope * s
 static const char * _operatorOf(const ExpressionType type);
 static ValueType _typeOf(const Expression * expression, const Scope * scope, const BodyContext * context);
 static ValueType _typeOfMember(const Expression * expression, const Scope * scope, const BodyContext * context);
-static ValueType _typeOfCall(const Expression * expression, const Scope * scope, const BodyContext * context);
+static ValueType _typeOfCall(const Expression * expression);
 static ValueType _typeOfRadius(const Expression * expression, const Scope * scope, const BodyContext * context);
 static ValueType _typeOfBinary(const Expression * expression, const Scope * scope, const BodyContext * context);
 static void _checkInt(const char * keyword, const char * what, const Expression * expression, const Scope * scope, const BodyContext * context);
@@ -811,7 +811,7 @@ static ValueType _typeOf(const Expression * expression, const Scope * scope, con
 		case MEMBER_EXPRESSION:
 			return _typeOfMember(expression, scope, context);
 		case CALL_EXPRESSION:
-			return _typeOfCall(expression, scope, context);
+			return _typeOfCall(expression);
 		case RADIUS_EXPRESSION:
 			return _typeOfRadius(expression, scope, context);
 		case NOT_EXPRESSION: {
@@ -863,11 +863,10 @@ static ValueType _typeOfMember(const Expression * expression, const Scope * scop
 }
 
 /**
- * The only functions are "nearest(ally)" and "nearest(enemy)", which are a
- * unit, and "all(units)", which is units. The arguments of a call that has an
- * error of its own are not looked into.
+ * The only function is "nearest", as "nearest(ally)" or "nearest(enemy)", and
+ * it is a unit. The arguments of an unknown function are not looked into.
  */
-static ValueType _typeOfCall(const Expression * expression, const Scope * scope, const BodyContext * context) {
+static ValueType _typeOfCall(const Expression * expression) {
 	const char * name = expression->functionName;
 	const int count = _countArguments(expression->arguments);
 	if (strcmp(name, "nearest") == 0) {
@@ -881,22 +880,6 @@ static ValueType _typeOfCall(const Expression * expression, const Scope * scope,
 		}
 		_semanticError(relation->line, "'nearest' needs 'ally' or 'enemy' as its argument");
 		return TYPE_ERROR;
-	}
-	if (strcmp(name, "all") == 0) {
-		if (count != 1) {
-			_semanticError(expression->line, "function 'all' expects 1 argument(s), got %d", count);
-			return TYPE_ERROR;
-		}
-		const Expression * collection = expression->arguments->expression;
-		const ValueType type = _typeOf(collection, scope, context);
-		if (type == TYPE_ERROR) {
-			return TYPE_ERROR;
-		}
-		if (type != TYPE_UNITS) {
-			_semanticError(collection->line, "'all' needs an argument of type units, got %s", _typeName(type));
-			return TYPE_ERROR;
-		}
-		return TYPE_UNITS;
 	}
 	_semanticError(expression->line, "unknown function '%s'", name);
 	return TYPE_ERROR;

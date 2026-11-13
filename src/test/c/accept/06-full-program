@@ -24,7 +24,7 @@ ability Heal on target: ally, self {
 }
 
 ability GroupHeal on target: ally {
-	for (member in all(allies)) {
+	for (member in allies) {
 		heal 1 to member
 	}
 }

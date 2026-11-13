@@ -16,7 +16,7 @@ static Value _collectUnits(Runtime * runtime, const int perspective, const bool 
 static Value _rollDice(Runtime * runtime, const DiceValue dice, const int line);
 static Value _evaluateMember(Runtime * runtime, const Expression * expression, const int perspective, const RuntimeScope * scope);
 static Value _nearest(Runtime * runtime, const char * relation, const int perspective, const int line);
-static Value _evaluateCall(Runtime * runtime, const Expression * expression, const int perspective, const RuntimeScope * scope);
+static Value _evaluateCall(Runtime * runtime, const Expression * expression, const int perspective);
 static Value _evaluateRadius(Runtime * runtime, const Expression * expression, const int perspective, const RuntimeScope * scope);
 static Value _applyOperator(Runtime * runtime, const Expression * expression, const Value * left, const Value * right);
 static Value _evaluateLogical(Runtime * runtime, const Expression * expression, const int perspective, const RuntimeScope * scope);
@@ -168,9 +168,9 @@ static Value _nearest(Runtime * runtime, const char * relation, const int perspe
 }
 
 /**
- * "nearest(ally)", "nearest(enemy)" and "all(units)".
+ * "nearest(ally)" and "nearest(enemy)", the only calls there are.
  */
-static Value _evaluateCall(Runtime * runtime, const Expression * expression, const int perspective, const RuntimeScope * scope) {
+static Value _evaluateCall(Runtime * runtime, const Expression * expression, const int perspective) {
 	const char * name = expression->functionName;
 	const ExpressionList * arguments = expression->arguments;
 	if (arguments == NULL || arguments->next != NULL) {
@@ -184,19 +184,6 @@ static Value _evaluateCall(Runtime * runtime, const Expression * expression, con
 			return noneValue();
 		}
 		return _nearest(runtime, relation->text, perspective, expression->line);
-	}
-	if (strcmp(name, "all") == 0) {
-		Value collection = evaluate(runtime, arguments->expression, perspective, scope);
-		if (runtime->failed) {
-			releaseValue(&collection);
-			return noneValue();
-		}
-		if (collection.kind != VALUE_NONE && collection.kind != VALUE_UNITS) {
-			_unexpected(runtime, expression->line, "units", &collection);
-			releaseValue(&collection);
-			return noneValue();
-		}
-		return collection;
 	}
 	runtimeFail(runtime, "line %d: unknown function '%s'", expression->line, name);
 	return noneValue();
@@ -401,7 +388,7 @@ static Value _evaluateExpression(Runtime * runtime, const Expression * expressio
 		case MEMBER_EXPRESSION:
 			return _evaluateMember(runtime, expression, perspective, scope);
 		case CALL_EXPRESSION:
-			return _evaluateCall(runtime, expression, perspective, scope);
+			return _evaluateCall(runtime, expression, perspective);
 		case RADIUS_EXPRESSION:
 			return _evaluateRadius(runtime, expression, perspective, scope);
 		case NOT_EXPRESSION: {

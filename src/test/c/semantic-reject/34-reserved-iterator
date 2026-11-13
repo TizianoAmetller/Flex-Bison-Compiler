@@ -1,5 +1,5 @@
 ability Slash on target {
-	for (all in allies) {
-		deal 1 to all
+	for (ally in allies) {
+		deal 1 to ally
 	}
 }

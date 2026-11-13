@@ -112,7 +112,7 @@ This program is tested in `src/test/c/simulation/27-readme-example`.
 | Team | `party` / `encounter` `<name> = [<member>, ...]` | A member is `Hero`, `Hero at (x, y)`, `Archer * 20` or `Archer * 2d6 around (x, y)`. |
 | Arena, battle | `arena (<w>, <h>)`, `battle: [<team>, ...]` | A battle takes any number of teams. |
 | Statements | `deal` / `heal <expr> to <expr>`, `use <ability> on <expr>`, `apply <effect> to <expr> for <expr>`, `move toward <expr>`, `move away from <expr>`, `log "<text>"`, `if` / `else`, `for (<id> in <expr>)`, `while` | `log` text may hold `{name}` and `{name.attribute}` placeholders. |
-| Expressions | `+ - * /`, `== != < > <= >=`, `and or not`, `a.b`, dice (`2d6`), `radius <r> of <center>`, `nearest(enemy)`, `all(units)` | Types: `int`, `bool`, `string`, `unit`, `units`. |
+| Expressions | `+ - * /`, `== != < > <= >=`, `and or not`, `a.b`, dice (`2d6`), `radius <r> of <center>`, `nearest(ally)`, `nearest(enemy)` | Types: `int`, `bool`, `string`, `unit`, `units`. |
 
 Keywords are reserved, identifiers are ASCII-only, and a number has at most 9 digits.
 
@@ -250,7 +250,7 @@ docker compose down                    # on the host: remove the containers and 
 | `html` | produce a complete page that loads nothing from outside and has exactly the data block of the `.data` file. |
 | `examples/` | end with a winner, as text and as a page, for `--seed 1`. |
 
-There are 203 tests. The same script runs in the CI.
+There are 202 tests. The same script runs in the CI.
 
 ## Documentation
 

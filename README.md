@@ -222,7 +222,7 @@ The program is read from the standard input (`run.sh` does it for you). Exit sta
 | `examples/02-three-armies.rpg` | 3 teams, 5 + 5 + 4 | All against all: abilities by tag, an effect that makes its victim flee, healing over time, `while`. |
 | `examples/03-siege.rpg` | 2 teams, 40 against 60 | A big battle with groups scattered `around` points. Good to see the metrics with some volume. |
 
-Each one ends with a winner in less than 80 rounds, for every seed from 1 to 20, and between them they use every feature of the language.
+Each one ends with a winner in less than 80 rounds, for every seed from 1 to 20. Between them they show the main constructs of the language; the tests in `src/test/c` cover all of them.
 
 ## Known limitations
 

@@ -1,5 +1,3 @@
-[![✗](https://img.shields.io/badge/Release-v2.0.0-ffb600.svg?style=for-the-badge)](https://github.com/TizianoAmetller/Flex-Bison-Compiler/releases)
-
 [![✗](https://github.com/TizianoAmetller/Flex-Bison-Compiler/actions/workflows/pipeline.yaml/badge.svg?branch=development)](https://github.com/TizianoAmetller/Flex-Bison-Compiler/actions/workflows/pipeline.yaml)
 
 # Flex-Bison-Compiler
@@ -191,7 +189,7 @@ Team Goblins: 0 alive, 1 dead
 | `--syntax-only` | Stop after the parser. |
 | `--help`, `-h` | Usage on the standard error. |
 
-The program is read from the standard input (`run.sh` does it for you). Exit status: `0` accepted and the battle ended (a draw is a way to end), `1` rejected, `3` the output could not be written, `100` invalid command line, `101` the simulation failed. A failed simulation still writes what happened until then. Logs go to the standard error.
+The program is read from the standard input (`run.sh` does it for you). Exit status: `0` accepted and the battle ended (a draw is a way to end), `1` rejected, `2` out of memory, `3` the output could not be written, `100` invalid command line, `101` the simulation failed (the base project reserves the statuses below 100). A failed simulation still writes what happened until then. Logs go to the standard error.
 
 | Limit | Value | When it is exceeded |
 | :---- | :---- | :------------------ |
@@ -204,6 +202,7 @@ The program is read from the standard input (`run.sh` does it for you). Exit sta
 | Nested statements | 1000 | The simulation fails |
 | Nesting of an expression | 2000 | The simulation fails |
 | Nesting of an expression when the program is read | 10000 | The program is rejected (exit status 1) |
+| Depth of the parser's stack (about 2000 nested blocks, 5000 members in a team, or 10000 statements in a block or declarations in a program) | 10000 | The program is rejected with `memory exhausted` (exit status 1) |
 
 ## HTML replay
 
@@ -251,12 +250,12 @@ _Docker Compose_ can read the variables from an `.env` file too (see `compose.ya
 ## Commands
 
 ```bash
-docker compose run --rm compiler       # start an ephemeral container, ready for development
-src/main/bash/build.sh                 # build (or rebuild) the compiler
-src/main/bash/run.sh <program> [opts]  # compile a program; the options are the ones of Simulation
-src/main/bash/test.sh                  # run every test
-exit                                   # leave the container
-docker compose down                    # on the host: remove the containers and the network
+docker compose run --rm compiler                           # start an ephemeral container, ready for development
+src/main/bash/build.sh                                     # build (or rebuild) the compiler
+LOGGING_LEVEL=ERROR src/main/bash/run.sh <program> [opts]  # compile a program; the options are the ones of Simulation
+src/main/bash/test.sh                                      # run every test
+exit                                                       # leave the container
+docker compose down                                        # on the host: remove the containers and the network
 ```
 
 ## Tests
@@ -294,7 +293,7 @@ _GitHub Actions_ is disabled by default on a new repository. To run the `pipelin
 
 ## Notes
 
-This repository is 5 commits behind the base template (`Alpha-Theta-Gamma-Mu/Flex-Bison-Compiler:development`). We reviewed them and did not merge them, to avoid integration risk close to the delivery; one of them (`694d39a`) fixes the same `UnknownLexemeAction` leak that we had fixed ourselves.
+The base template (`Alpha-Theta-Gamma-Mu/Flex-Bison-Compiler:development`) has 5 commits that this repository does not merge. Two of them rework the template's own arithmetic frontend (`15ef912`, `694d39a`), which this project replaced; one adds a GDB setup (`7edbac8`); one adapts its CI to older runners (`e329b9c`); and one updates its test script, CMake and Docker image (`d2014d3`). `694d39a` also fixes an `UnknownLexemeAction` leak that we had already fixed, and our Docker image is Ubuntu 24.04 LTS, the same system as the CI (the template moved to Ubuntu 26.04).
 
 ## Recommended Extensions
 
